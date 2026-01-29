@@ -51,7 +51,7 @@ After deployment, your backend will be available at:
 ### Step 3: Set Environment Variables on Vercel
 Add this environment variable in Vercel project settings:
 ```
-REACT_APP_API_URL=https://your-render-backend-url.onrender.com/api
+REACT_APP_API_URL=https://smart-civic-issue-reporter.onrender.com/api
 ```
 
 ### Step 4: Update CORS Settings
