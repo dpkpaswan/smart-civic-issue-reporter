@@ -41,6 +41,7 @@ const ReportIssue = () => {
         window.currentLocationWatch = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const detectLocation = async () => {

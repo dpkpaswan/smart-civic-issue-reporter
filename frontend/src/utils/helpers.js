@@ -167,8 +167,10 @@ export const geolocationUtils = {
   getHighAccuracyPosition: async (maxAttempts = 5, options = {}) => {
     const {
       accuracyThreshold = 5,     // Target accuracy in meters
+      // eslint-disable-next-line no-unused-vars
       maxWaitTime = 30000,       // Maximum wait time per attempt
       useStatisticalFiltering = true,
+      // eslint-disable-next-line no-unused-vars
       enableProgressiveAccuracy = true
     } = options;
 
@@ -271,6 +273,7 @@ export const geolocationUtils = {
       maxSamples = 8,
       sampleInterval = 1500,
       accuracyTarget = 3,
+      // eslint-disable-next-line no-unused-vars
       timeoutPerSample = 25000,
       useMotionDetection = true
     } = options;
