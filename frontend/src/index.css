@@ -1,0 +1,340 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Custom CSS for mobile-optimized civic issue reporting */
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Mobile-first touch optimization */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  input, textarea, button, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  @media (min-width: 640px) {
+    input, textarea, button, select {
+      font-size: 14px;
+    }
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-warning {
+    @apply bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md border border-gray-200 p-6;
+  }
+  
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide;
+  }
+  
+  .status-submitted {
+    @apply bg-blue-100 text-blue-800;
+  }
+  
+  .status-in-progress {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .status-resolved {
+    @apply bg-green-100 text-green-800;
+  }
+
+  /* Premium hackathon-ready components */
+  .premium-card {
+    @apply bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
+  }
+  
+  .feature-icon {
+    @apply w-16 h-16 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300;
+  }
+  
+  .cta-primary {
+    @apply bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform;
+  }
+  
+  .cta-secondary {
+    @apply border-2 border-blue-300 text-blue-100 hover:bg-white hover:text-blue-900 px-8 py-4 rounded-xl font-semibold transition-all duration-300;
+  }
+}
+
+/* Premium gradient backgrounds for hackathon presentation */
+.hero-gradient {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #0f172a 100%);
+}
+
+.section-gradient {
+  background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
+}
+
+/* Enhanced loading animation with premium feel */
+.loading-spinner {
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Premium hover effects */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* File upload styles with premium look */
+.file-upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.file-upload-area:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1);
+}
+
+.file-upload-area.dragover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  transform: scale(1.02);
+}
+
+/* Enhanced map container */
+.map-container {
+  height: 400px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+/* Progress indicators for hackathon demo */
+.progress-circle {
+  @apply bg-white rounded-full p-4 shadow-lg border border-slate-200;
+}
+
+/* Mobile-first responsive design for optimal civic reporting experience */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .hero-text {
+    font-size: clamp(1.75rem, 7vw, 3rem);
+    line-height: 1.2;
+  }
+  
+  .section-title {
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    line-height: 1.3;
+  }
+  
+  /* Touch-friendly button sizing */
+  .btn-primary, .btn-secondary {
+    min-height: 48px;
+    font-size: 1rem;
+    padding: 0.875rem 1.5rem;
+  }
+  
+  /* Mobile form optimizations */
+  .input-field {
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 48px;
+    padding: 0.875rem 1rem;
+  }
+  
+  /* Mobile card spacing */
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Mobile navigation improvements */
+  .mobile-menu {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+/* Extra small devices (phones in portrait) */
+@media (max-width: 480px) {
+  .hero-text {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+  }
+  
+  .section-title {
+    font-size: clamp(1.25rem, 4.5vw, 2rem);
+  }
+  
+  /* Ultra-mobile spacing */
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Large mobile/small tablet */
+@media (min-width: 641px) and (max-width: 768px) {
+  .hero-text {
+    font-size: clamp(2.5rem, 6vw, 3.5rem);
+  }
+  
+  .section-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+  }
+}
+
+/* Mobile-first touch-optimized styles */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Enhanced mobile focus states for accessibility */
+.focus-premium:focus {
+  @apply outline-none ring-4 ring-blue-500 ring-opacity-50;
+}
+
+/* Mobile-optimized button styles */
+@layer components {
+  .btn-mobile {
+    @apply min-h-12 px-6 py-3 text-base font-medium rounded-xl transition-all duration-300 touch-manipulation;
+  }
+  
+  .input-mobile {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base touch-manipulation;
+  }
+  
+  .card-mobile {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 touch-manipulation;
+  }
+}
+
+/* Responsive breakpoints for mobile-first design */
+@media (max-width: 479px) {
+  .xs\:block { display: block; }
+  .xs\:hidden { display: none; }
+  .xs\:text-sm { font-size: 0.875rem; }
+}
+
+/* Mobile navigation slide-in animation */
+.mobile-nav-enter {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.mobile-nav-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform 300ms ease-out, opacity 300ms ease-out;
+}
+
+.mobile-nav-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.mobile-nav-exit-active {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: transform 300ms ease-in, opacity 300ms ease-in;
+}
+
+/* Mobile sticky elements */
+.mobile-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+/* Mobile-optimized spacing */
+.mobile-section-padding {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-section-padding {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-section-padding {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+/* Hackathon badge styling - mobile optimized */
+.hackathon-badge {
+  @apply bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 px-3 py-1.5 rounded-full text-sm font-medium border border-amber-200 shadow-sm;
+}
+
+@media (max-width: 479px) {
+  .hackathon-badge {
+    @apply text-xs px-2 py-1;
+  }
+}
