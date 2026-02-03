@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS issues (
   issue_id VARCHAR(20) UNIQUE NOT NULL,
   citizen_name VARCHAR(255) NOT NULL,
   citizen_email VARCHAR(255) NOT NULL,
-  category VARCHAR(50) NOT NULL CHECK (category IN ('pothole', 'garbage', 'streetlight', 'other')),
+  category VARCHAR(50) NOT NULL CHECK (category IN ('pothole', 'garbage', 'streetlight', 'graffiti', 'water', 'traffic', 'sidewalk', 'other')),
   description TEXT,
   location JSONB NOT NULL,
   images TEXT[] DEFAULT '{}',

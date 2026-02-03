@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS issues (
   issue_id VARCHAR(20) UNIQUE NOT NULL,
   citizen_name VARCHAR(255) NOT NULL,
   citizen_email VARCHAR(255) NOT NULL,
-  category VARCHAR(50) NOT NULL CHECK (category IN ('pothole', 'garbage', 'streetlight', 'other')),
+  category VARCHAR(50) NOT NULL CHECK (category IN ('pothole', 'garbage', 'streetlight', 'graffiti', 'water', 'traffic', 'sidewalk', 'other')),
   description TEXT,
   location JSONB NOT NULL,
   images TEXT[] DEFAULT '{}',
@@ -275,6 +275,23 @@ With Supabase configured, your app will now:
 ✅ **Scale automatically** with Supabase infrastructure  
 ✅ **Provide real-time updates** (can be extended with Supabase realtime)  
 ✅ **Support production deployment** with proper credentials  
+
+## Database Migration (For Existing Installations)
+
+If you already have the database set up and need to add the new issue categories, run this SQL command in your Supabase SQL Editor:
+
+```sql
+-- Update the category check constraint to include all available categories
+ALTER TABLE issues DROP CONSTRAINT IF EXISTS issues_category_check;
+ALTER TABLE issues ADD CONSTRAINT issues_category_check 
+CHECK (category IN ('pothole', 'garbage', 'streetlight', 'graffiti', 'water', 'traffic', 'sidewalk', 'other'));
+```
+
+This adds support for these additional categories:
+- `graffiti` - Vandalism and graffiti
+- `water` - Water leaks and drainage  
+- `traffic` - Traffic light problems
+- `sidewalk` - Sidewalk damage
 
 ## Production Considerations
 

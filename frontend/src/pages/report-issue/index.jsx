@@ -67,8 +67,8 @@ const ReportIssue = () => {
         errors?.push('Valid location information required - please detect GPS location or enter address manually');
       }
       
-      // For GPS locations, check accuracy requirements for civic reporting
-      if (hasGPSLocation && formData?.location?.accuracy) {
+      // For GPS locations only, check accuracy requirements (skip for manual addresses)
+      if (hasGPSLocation && formData?.location?.addressSource !== 'manual' && formData?.location?.accuracy) {
         if (formData?.location?.accuracy > 100) {
           errors?.push(`Location accuracy too low (±${formData.location.accuracy}m). Please retry detection or move to an area with better GPS signal.`);
         }
