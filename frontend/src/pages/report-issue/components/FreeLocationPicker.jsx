@@ -3,6 +3,7 @@ import { MapPin, Navigation, RefreshCw, AlertTriangle, CheckCircle, AlertCircle,
 import useAccurateLocationDetection from '../../../hooks/useAccurateLocationDetection';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
+import { toast } from '../../../utils/toast';
 
 const FreeLocationPicker = ({ 
   location, 
@@ -45,7 +46,10 @@ const FreeLocationPicker = ({
 
   // Handle manual address submission
   const handleManualSubmit = () => {
-    if (!manualAddress.trim()) return;
+    if (!manualAddress.trim()) {
+      toast.error('Please enter a valid address');
+      return;
+    }
 
     const manualLocation = {
       coordinates: null,
@@ -56,12 +60,16 @@ const FreeLocationPicker = ({
       source: 'manual',
       addressDetails: {
         formattedAddress: manualAddress.trim(),
+        streetAddress: manualAddress.trim(),
         manualEntry: true
       }
     };
 
+    console.log('📝 Manual address entered:', manualLocation);
     onLocationChange?.(manualLocation);
     setShowManualEntry(false);
+    setManualAddress('');
+    toast.success('Address added successfully!');
   };
 
   // Get accuracy display info
@@ -157,16 +165,67 @@ const FreeLocationPicker = ({
               )}
               
               {error.type !== 'PERMISSION_DENIED' && (
+                <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                  <Button
+                    onClick={retryDetection}
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none touch-manipulation"
+                    disabled={isDetecting}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                  <Button
+                    onClick={() => setShowManualEntry(true)}
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none touch-manipulation"
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Enter Manually
+                  </Button>
+                </div>
+              )}
+              
+              {error.type === 'PERMISSION_DENIED' && (
                 <Button
-                  onClick={retryDetection}
-                  className="mt-3 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto touch-manipulation"
-                  disabled={isDetecting}
+                  onClick={() => setShowManualEntry(true)}
+                  variant="outline"
+                  className="mt-3 border-blue-600 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto touch-manipulation"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Enter Address Manually
                 </Button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Address Confirmation */}
+      {location && location.addressSource === 'manual' && (
+        <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-start gap-3">
+            <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                <span className="text-sm sm:text-base text-blue-800 font-medium">📝 Manual Address Entered</span>
+                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-full text-xs w-fit">
+                  <MapPin className="h-3 w-3" />
+                  <span>Manual Entry</span>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-blue-700 leading-relaxed break-words">
+                {location.address}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button
+              onClick={() => setShowManualEntry(true)}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs px-3 py-2 touch-manipulation"
+            >
+              Edit Address
+            </Button>
           </div>
         </div>
       )}
@@ -275,14 +334,21 @@ const FreeLocationPicker = ({
       {/* Mobile-optimized Manual Entry Section */}
       <div className="border-t pt-3 sm:pt-4">
         {!showManualEntry ? (
-          <Button
-            onClick={() => setShowManualEntry(true)}
-            variant="outline"
-            className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-3 sm:py-2 touch-manipulation"
-          >
-            <MapPin className="h-4 w-4 mr-2" />
-            Enter Address Manually
-          </Button>
+          <div className="space-y-2">
+            <Button
+              onClick={() => setShowManualEntry(true)}
+              variant="outline"
+              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-3 sm:py-2 touch-manipulation"
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Enter Address Manually
+            </Button>
+            {!location && !isDetecting && (
+              <p className="text-xs text-gray-500 text-center">
+                Can't detect your location? Enter your address manually to continue
+              </p>
+            )}
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center gap-2">

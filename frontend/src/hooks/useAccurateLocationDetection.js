@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 /**
  * Free High-Accuracy Location Detection Hook
@@ -24,11 +24,11 @@ export const useAccurateLocationDetection = ({
   const timeoutRef = useRef(null);
 
   // High-accuracy geolocation configuration
-  const geoOptions = {
+  const geoOptions = useMemo(() => ({
     enableHighAccuracy: true,    // Use GPS/Wi-Fi/network triangulation
     timeout: 15000,              // 15 second timeout
     maximumAge: 0                // Always get fresh reading
-  };
+  }), []);
 
   // Calculate accuracy status for civic reporting
   const getAccuracyStatus = (accuracyMeters) => {
@@ -47,7 +47,7 @@ export const useAccurateLocationDetection = ({
   const isAccuracyAcceptable = accuracy && accuracy <= accuracyThreshold;
 
   // OpenStreetMap Nominatim reverse geocoding (100% Free)
-  const reverseGeocode = async (latitude, longitude) => {
+  const reverseGeocode = useCallback(async (latitude, longitude) => {
     setIsGeocoding(true);
     
     try {
@@ -117,10 +117,10 @@ export const useAccurateLocationDetection = ({
     } finally {
       setIsGeocoding(false);
     }
-  };
+  }, []);
 
   // Main GPS detection function
-  const detectLocation = async () => {
+  const detectLocation = useCallback(async () => {
     if (isDetecting) return;
 
     setIsDetecting(true);
@@ -219,10 +219,10 @@ export const useAccurateLocationDetection = ({
     } finally {
       setIsDetecting(false);
     }
-  };
+  }, [isDetecting, reverseGeocode, geoOptions]);
 
   // Retry detection with better accuracy
-  const retryDetection = async () => {
+  const retryDetection = useCallback(async () => {
     if (retryCount >= maxRetries) {
       setError({
         type: 'MAX_RETRIES_EXCEEDED',
@@ -241,7 +241,7 @@ export const useAccurateLocationDetection = ({
     timeoutRef.current = setTimeout(() => {
       detectLocation();
     }, delay);
-  };
+  }, [retryCount, maxRetries, detectLocation]);
 
   // Auto-detection on mount
   useEffect(() => {
@@ -256,7 +256,7 @@ export const useAccurateLocationDetection = ({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [enableAutoDetection]);
+  }, [enableAutoDetection, location, isDetecting, detectLocation]);
 
   // Cleanup on unmount
   useEffect(() => {

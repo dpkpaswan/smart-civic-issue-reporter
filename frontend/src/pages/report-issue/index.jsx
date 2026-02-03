@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import ProgressWorkflowIndicator from '../../components/ui/ProgressWorkflowIndicator';
@@ -94,7 +94,7 @@ const ReportIssue = () => {
     return errors?.length === 0;
   };
 
-  const handleImagesChange = (imageFiles) => {
+  const handleImagesChange = useCallback((imageFiles) => {
     setFormData(prev => ({ 
       ...prev, 
       imageFiles,
@@ -103,26 +103,26 @@ const ReportIssue = () => {
     if (imageFiles?.length > 0 && currentStep === 1) {
       setCurrentStep(2);
     }
-  };
+  }, [currentStep]);
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = useCallback((category) => {
     setFormData(prev => ({ ...prev, category }));
     if (category && currentStep === 2) {
       setCurrentStep(3);
     }
-  };
+  }, [currentStep]);
 
-  const handleLocationChange = (location) => {
+  const handleLocationChange = useCallback((location) => {
     setFormData(prev => ({ ...prev, location }));
-  };
+  }, []);
 
-  const handleDescriptionChange = (description) => {
+  const handleDescriptionChange = useCallback((description) => {
     setFormData(prev => ({ ...prev, description }));
-  };
+  }, []);
 
-  const handleCitizenInfoChange = (field, value) => {
+  const handleCitizenInfoChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   const handleSubmit = async () => {
     if (!validateForm()) {
