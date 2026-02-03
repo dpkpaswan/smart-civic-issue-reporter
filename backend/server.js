@@ -17,9 +17,48 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://smart-civic-issue-reporter.vercel.app', 'https://smart-civic-reporter.vercel.app', 'https://smart-civic-issue-reporter.vercel.app']
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:4028', 'http://127.0.0.1:4028', 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: function (origin, callback) {
+    // In production, allow specific domains and all Vercel preview deployments
+    if (process.env.NODE_ENV === 'production') {
+      const allowedDomains = [
+        'https://smart-civic-issue-reporter.vercel.app',
+        'https://smart-civic-reporter.vercel.app',
+        'https://smart-civic-issue-r-git-5ca3dd-dkdeepk723-protonmailcs-projects.vercel.app'
+      ];
+      
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check exact matches first
+      if (allowedDomains.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Allow all Vercel preview deployments
+      if (origin.includes('.vercel.app') && 
+          (origin.includes('smart-civic-issue-r') || 
+           origin.includes('smart-civic-reporter') || 
+           origin.includes('smart-civic-issue-reporter'))) {
+        return callback(null, true);
+      }
+      
+      console.log('CORS blocked origin:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    } else {
+      // Development - allow all localhost origins
+      const devOrigins = [
+        'http://localhost:3000', 'http://127.0.0.1:3000', 
+        'http://localhost:4028', 'http://127.0.0.1:4028', 
+        'http://localhost:5173', 'http://127.0.0.1:5173'
+      ];
+      
+      if (!origin || devOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
