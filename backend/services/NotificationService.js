@@ -40,8 +40,17 @@ class NotificationService {
 
     try {
       this.emailTransporter = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE || 'gmail',
-        auth: { user: emailUser, pass: emailPass }
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT, 10) || 587,
+        secure: process.env.EMAIL_SECURE === 'true',        // false for port 587 (STARTTLS)
+        auth: { user: emailUser, pass: emailPass },
+        connectionTimeout: 10000,   // 10 s to connect
+        greetingTimeout: 10000,     // 10 s for SMTP greeting
+        socketTimeout: 15000,       // 15 s for any socket silence
+        tls: {
+          rejectUnauthorized: false, // accept Render's network edge certs
+          minVersion: 'TLSv1.2'
+        }
       });
 
       await this.emailTransporter.verify();
