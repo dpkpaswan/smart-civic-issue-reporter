@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Header from '../../components/ui/Header';
 import ProgressWorkflowIndicator from '../../components/ui/ProgressWorkflowIndicator';
 import { LoadingButton } from '../../components/ui/Loading';
@@ -14,6 +15,7 @@ import Icon from '../../components/AppIcon';
 
 const ReportIssue = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -28,33 +30,35 @@ const ReportIssue = () => {
     citizenEmail: ''
   });
 
+  const [aiPrediction, setAiPrediction] = useState(null);
+  const [isAIClassifying, setIsAIClassifying] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
 
   useEffect(() => {
-    document.title = "Report Issue - Smart Civic Issue Reporter";
+    document.title = t('reportIssue.pageTitle');
     window.scrollTo(0, 0);
   }, []);
 
   const workflowSteps = [
-    { label: 'Capture', icon: 'Camera', description: 'Upload photos of the issue' },
-    { label: 'Categorize', icon: 'Tag', description: 'Select issue category' },
-    { label: 'Submit', icon: 'Send', description: 'Review and submit report' }
+    { label: t('reportIssue.stepCapture'), icon: 'Camera', description: t('reportIssue.stepCaptureDesc') },
+    { label: t('reportIssue.stepCategorize'), icon: 'Tag', description: t('reportIssue.stepCategorizeDesc') },
+    { label: t('reportIssue.stepSubmit'), icon: 'Send', description: t('reportIssue.stepSubmitDesc') }
   ];
 
   const validateForm = () => {
     const errors = [];
 
     if (formData?.imageFiles?.length === 0) {
-      errors?.push('At least one photo is required to document the issue');
+      errors?.push(t('reportIssue.photoRequired'));
     }
 
     if (!formData?.category) {
-      errors?.push('Please select an issue category');
+      errors?.push(t('reportIssue.categoryRequired'));
     }
 
     // Free location validation with OpenStreetMap integration
     if (!formData?.location) {
-      errors?.push('Location information is required for precise issue reporting');
+      errors?.push(t('reportIssue.locationRequired'));
     } else {
       // Check if location has coordinates (GPS) or manual address
       const hasGPSLocation = formData?.location?.coordinates && 
@@ -64,30 +68,27 @@ const ReportIssue = () => {
                               formData?.location?.addressSource === 'manual';
       
       if (!hasGPSLocation && !hasManualAddress) {
-        errors?.push('Valid location information required - please detect GPS location or enter address manually');
+        errors?.push(t('reportIssue.validLocationRequired'));
       }
       
-      // For GPS locations only, check accuracy requirements (skip for manual addresses)
-      if (hasGPSLocation && formData?.location?.addressSource !== 'manual' && formData?.location?.accuracy) {
-        if (formData?.location?.accuracy > 100) {
-          errors?.push(`Location accuracy too low (±${formData.location.accuracy}m). Please retry detection or move to an area with better GPS signal.`);
-        }
-        // Note: 50-100m accuracy shows warning but doesn't block submission
-      }
+      // Accuracy is informational only — never blocks submission
+      // Desktop browsers use IP/WiFi geolocation (can be 100-50000m+)
+      // Mobile devices have actual GPS (~5-50m)
+      // As long as we have coordinates + a reverse-geocoded address, that's enough
       
       if (!formData?.location?.address) {
-        errors?.push('Address information missing - please wait for location detection to complete or enter manually');
+        errors?.push(t('reportIssue.addressMissing'));
       }
     }
 
     if (!formData?.citizenName?.trim()) {
-      errors?.push('Your name is required');
+      errors?.push(t('reportIssue.nameRequired'));
     }
 
     if (!formData?.citizenEmail?.trim()) {
-      errors?.push('Your email is required');
+      errors?.push(t('reportIssue.emailRequired'));
     } else if (!/\S+@\S+\.\S+/.test(formData?.citizenEmail)) {
-      errors?.push('Please enter a valid email address');
+      errors?.push(t('reportIssue.validEmail'));
     }
 
     setValidationErrors(errors);
@@ -104,13 +105,38 @@ const ReportIssue = () => {
       setCurrentStep(2);
     }
   }, [currentStep]);
+  
+  const handleAIClassification = useCallback((prediction) => {
+    setAiPrediction(prediction);
+    setIsAIClassifying(false);
+    
+    // Auto-select the predicted category if confidence is high enough
+    if (prediction?.category && prediction.confidence >= 0.6) {
+      setFormData(prev => ({ ...prev, category: prediction.category }));
+      
+      // Auto-advance to next step if category was auto-selected
+      if (currentStep === 2) {
+        setTimeout(() => setCurrentStep(3), 1500); // Brief delay to show the selection
+      }
+    }
+  }, [currentStep]);
+  
+  const handleAIClassificationStart = useCallback(() => {
+    setIsAIClassifying(true);
+    setAiPrediction(null); // Clear previous prediction
+  }, []);
 
   const handleCategoryChange = useCallback((category) => {
     setFormData(prev => ({ ...prev, category }));
     if (category && currentStep === 2) {
       setCurrentStep(3);
     }
-  }, [currentStep]);
+    
+    // Log if user overrides AI prediction
+    if (aiPrediction?.category && category !== aiPrediction.category) {
+      // User overrode AI prediction — this is acceptable
+    }
+  }, [currentStep, aiPrediction]);
 
   const handleLocationChange = useCallback((location) => {
     setFormData(prev => ({ ...prev, location }));
@@ -148,7 +174,7 @@ const ReportIssue = () => {
           }
         } catch (uploadError) {
           console.error('Image upload error:', uploadError);
-          toast.error('Failed to upload images. Please try again.');
+          toast.error(t('reportIssue.uploadFailed'));
           return;
         } finally {
           setIsUploadingImages(false);
@@ -156,17 +182,22 @@ const ReportIssue = () => {
       }
 
       // Step 2: Create issue with uploaded image URLs
+      // Build location object matching backend schema { lat, lng, address }
+      const loc = formData.location;
+      const lat = loc?.coordinates?.latitude || loc?.lat || null;
+      const lng = loc?.coordinates?.longitude || loc?.lng || null;
+
       const issueData = {
         citizenName: formData.citizenName.trim(),
         citizenEmail: formData.citizenEmail.trim(),
         category: formData.category,
-        description: formData.description.trim() || 'No additional description provided',
-        location: formData.location.address,
-        latitude: formData.location.lat || null,
-        longitude: formData.location.lng || null,
-        images: uploadedImageUrls,
-        status: 'pending',
-        priority: 'medium' // Default priority
+        description: formData.description.trim() || t('reportIssue.noDescription'),
+        location: {
+          lat: lat ? parseFloat(lat) : 0,
+          lng: lng ? parseFloat(lng) : 0,
+          address: loc?.address || loc?.addressDetails?.formattedAddress || t('reportIssue.addressNotAvailable')
+        },
+        images: uploadedImageUrls
       };
 
       const createResponse = await issuesApi.create(issueData);
@@ -181,15 +212,15 @@ const ReportIssue = () => {
           estimatedResolution: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         };
 
-        toast.success('Issue reported successfully!');
+        toast.success(t('reportIssue.issueReportedSuccess'));
         navigate('/issue-confirmation', { state: { report: reportData } });
       } else {
-        throw new Error(createResponse.message || 'Failed to create issue');
+        throw new Error(createResponse.message || t('reportIssue.createIssueFailed'));
       }
       
     } catch (error) {
       console.error('Error submitting issue:', error);
-      toast.error(error.message || 'Failed to submit issue. Please try again.');
+      toast.error(error.message || t('reportIssue.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -216,10 +247,10 @@ const ReportIssue = () => {
               </button>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground animate-slide-in-right">
-                  Report Civic Issue
+                  {t('reportIssue.title')}
                 </h1>
                 <p className="text-sm lg:text-base text-muted-foreground mt-1 animate-slide-in-left">
-                  Help improve your community by reporting issues
+                  {t('reportIssue.subtitle')}
                 </p>
               </div>
             </div>
@@ -239,7 +270,7 @@ const ReportIssue = () => {
                 <Icon name="AlertCircle" size={20} className="text-error flex-shrink-0 mt-0.5 animate-pulse" />
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold text-error mb-2">
-                    Please complete the following:
+                    {t('reportIssue.pleaseComplete')}
                   </h4>
                   <ul className="space-y-1">
                     {validationErrors?.map((error, index) => (
@@ -259,6 +290,9 @@ const ReportIssue = () => {
               <ImageUploadZone
                 images={formData?.images}
                 onImagesChange={handleImagesChange}
+                onAIClassification={handleAIClassification}
+                onAIClassificationStart={handleAIClassificationStart}
+                isClassifying={isAIClassifying}
                 maxImages={5}
               />
             </div>
@@ -267,6 +301,8 @@ const ReportIssue = () => {
               <CategorySelector
                 selectedCategory={formData?.category}
                 onCategoryChange={handleCategoryChange}
+                aiPrediction={aiPrediction}
+                isLoading={isAIClassifying}
               />
             </div>
 
@@ -305,24 +341,24 @@ const ReportIssue = () => {
               <Icon name="Info" size={20} className="text-primary flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-foreground mb-2">
-                  What happens next?
+                  {t('reportIssue.whatHappensNext')}
                 </h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">1.</span>
-                    <span>Your report will be reviewed by local authorities within 24-48 hours</span>
+                    <span>{t('reportIssue.reviewedBy')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">2.</span>
-                    <span>You'll receive a tracking ID to monitor the progress of your issue</span>
+                    <span>{t('reportIssue.trackingId')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">3.</span>
-                    <span>Authorities will update the status as they work on resolving the issue</span>
+                    <span>{t('reportIssue.authoritiesUpdate')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">4.</span>
-                    <span>You can track all updates on the public transparency dashboard</span>
+                    <span>{t('reportIssue.trackOnDashboard')}</span>
                   </li>
                 </ul>
               </div>

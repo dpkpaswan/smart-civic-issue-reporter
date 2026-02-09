@@ -1,4 +1,5 @@
 import React from 'react';
+import { getImageUrl } from '../utils/api';
 
 function Image({
   src,
@@ -6,14 +7,18 @@ function Image({
   className = "",
   ...props
 }) {
+  // Resolve the image URL to the correct backend host
+  const resolvedSrc = getImageUrl(src);
 
   return (
     <img
-      src={src}
+      src={resolvedSrc || '/assets/images/no_image.png'}
       alt={alt}
       className={className}
       onError={(e) => {
-        e.target.src = "/assets/images/no_image.png"
+        if (e.target.src !== window.location.origin + '/assets/images/no_image.png') {
+          e.target.src = '/assets/images/no_image.png';
+        }
       }}
       {...props}
     />

@@ -31,19 +31,23 @@ export const useAccurateLocationDetection = ({
   }), []);
 
   // Calculate accuracy status for civic reporting
+  // Desktop browsers use IP/WiFi (100-5000m), mobile has real GPS (5-50m)
   const getAccuracyStatus = (accuracyMeters) => {
     if (accuracyMeters <= 10) {
       return { quality: 'excellent', color: 'success', icon: 'CheckCircle' };
-    } else if (accuracyMeters <= 25) {
-      return { quality: 'good', color: 'success', icon: 'CheckCircle' };
     } else if (accuracyMeters <= 50) {
+      return { quality: 'good', color: 'success', icon: 'CheckCircle' };
+    } else if (accuracyMeters <= 200) {
       return { quality: 'fair', color: 'warning', icon: 'AlertTriangle' };
+    } else if (accuracyMeters <= 1000) {
+      return { quality: 'approximate', color: 'warning', icon: 'AlertTriangle' };
     } else {
-      return { quality: 'poor', color: 'destructive', icon: 'AlertCircle' };
+      return { quality: 'rough', color: 'destructive', icon: 'AlertCircle' };
     }
   };
 
   // Check if accuracy is acceptable for civic reporting
+  // Desktop browsers rarely get <50m, so we accept up to the configured threshold
   const isAccuracyAcceptable = accuracy && accuracy <= accuracyThreshold;
 
   // OpenStreetMap Nominatim reverse geocoding (100% Free)
@@ -93,12 +97,6 @@ export const useAccurateLocationDetection = ({
         addressDetails.area || 
         `${addressDetails.city}, ${addressDetails.state}`;
 
-      console.log('🗺️ Free geocoding successful:', {
-        coordinates: { latitude, longitude },
-        address: streetAddress,
-        details: addressDetails
-      });
-
       setAddressDetails(addressDetails);
       return streetAddress;
 
@@ -137,8 +135,6 @@ export const useAccurateLocationDetection = ({
         throw new Error('Geolocation is not supported by this browser');
       }
 
-      console.log('🎯 Starting free high-accuracy GPS detection...');
-
       const position = await new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new Error('GPS detection timeout after 15 seconds'));
@@ -159,12 +155,6 @@ export const useAccurateLocationDetection = ({
 
       const { latitude, longitude, accuracy: gpsAccuracy } = position.coords;
       
-      console.log('🎯 GPS detection successful:', {
-        coordinates: { latitude, longitude },
-        accuracy: `±${gpsAccuracy} meters`,
-        timestamp: new Date().toISOString()
-      });
-
       setAccuracy(gpsAccuracy);
       
       // Get address using free OpenStreetMap geocoding
@@ -184,8 +174,6 @@ export const useAccurateLocationDetection = ({
       setLocation(locationData);
       setLastDetectionTime(Date.now());
       setRetryCount(0);
-
-      console.log('✅ Free location detection complete:', locationData);
 
     } catch (err) {
       console.error('❌ Free location detection failed:', err);
@@ -232,7 +220,6 @@ export const useAccurateLocationDetection = ({
       return;
     }
 
-    console.log(`🔄 Retrying free location detection (${retryCount + 1}/${maxRetries})`);
     setRetryCount(prev => prev + 1);
     
     // Exponential backoff: wait 2^retryCount seconds
@@ -246,7 +233,6 @@ export const useAccurateLocationDetection = ({
   // Auto-detection on mount
   useEffect(() => {
     if (enableAutoDetection && !location && !isDetecting) {
-      console.log('🚀 Starting automatic free location detection...');
       detectLocation();
     }
 

@@ -1,34 +1,37 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const HelpfulResources = () => {
+  const { t } = useTranslation();
+
   const resources = [
     {
       icon: 'Phone',
-      title: 'Direct Contact',
-      description: 'Call local authorities for urgent issues',
-      action: '1-800-CIVIC-HELP',
+      title: t('helpfulResources.directContact'),
+      description: t('helpfulResources.directContactDesc'),
+      action: t('helpfulResources.phone'),
       link: 'tel:1-800-242-4243'
     },
     {
       icon: 'Mail',
-      title: 'Email Support',
-      description: 'Send detailed inquiries or follow-ups',
-      action: 'support@smartcivicreporter.gov',
+      title: t('helpfulResources.emailSupport'),
+      description: t('helpfulResources.emailSupportDesc'),
+      action: t('helpfulResources.emailAddress'),
       link: 'mailto:support@smartcivicreporter.gov'
     },
     {
       icon: 'AlertCircle',
-      title: 'Escalation Process',
-      description: 'Learn how to escalate unresolved issues',
-      action: 'View Guidelines',
+      title: t('helpfulResources.escalation'),
+      description: t('helpfulResources.escalationDesc'),
+      action: t('helpfulResources.viewGuidelines'),
       link: '#'
     },
     {
       icon: 'BookOpen',
-      title: 'FAQ & Resources',
-      description: 'Common questions and civic engagement tips',
-      action: 'Browse Resources',
+      title: t('helpfulResources.faq'),
+      description: t('helpfulResources.faqDesc'),
+      action: t('helpfulResources.browseResources'),
       link: '#'
     }
   ];
@@ -38,7 +41,7 @@ const HelpfulResources = () => {
       <div className="flex items-center gap-2 mb-4 md:mb-5 lg:mb-6">
         <Icon name="HelpCircle" size={20} className="text-primary md:w-6 md:h-6" />
         <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-foreground">
-          Need Additional Help?
+          {t('helpfulResources.title')}
         </h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -70,10 +73,10 @@ const HelpfulResources = () => {
           <Icon name="AlertTriangle" size={18} className="text-warning flex-shrink-0 mt-0.5 md:w-5 md:h-5" />
           <div className="flex-1">
             <p className="text-xs md:text-sm font-semibold text-foreground mb-1">
-              Emergency Situations
+              {t('helpfulResources.emergencyTitle')}
             </p>
             <p className="text-xs md:text-sm text-muted-foreground">
-              For life-threatening emergencies, please call 911 immediately. This platform is for non-emergency civic issues only.
+              {t('helpfulResources.emergencyDesc')}
             </p>
           </div>
         </div>

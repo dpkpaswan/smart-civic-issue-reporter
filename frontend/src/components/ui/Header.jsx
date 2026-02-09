@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 import Button from './Button';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = ({ isAuthenticated = false }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const publicNavItems = [
-    { label: 'Report Issue', path: '/report-issue', icon: 'Camera' },
-    { label: 'Track Issues', path: '/public-transparency', icon: 'Eye' },
+    { label: t('navbar.reportIssue'), path: '/report-issue', icon: 'Camera' },
+    { label: t('navbar.trackIssues'), path: '/public-transparency', icon: 'Eye' },
   ];
 
   const isActivePath = (path) => location?.pathname === path;
@@ -35,7 +38,7 @@ const Header = ({ isAuthenticated = false }) => {
             <div className="header-logo">
               <Icon name="Shield" size={24} className="header-logo-icon" />
             </div>
-            <span className="header-logo-text">Smart Civic Reporter</span>
+            <span className="header-logo-text">{t('navbar.title')}</span>
           </div>
 
           <nav className="hidden lg:flex items-center gap-2">
@@ -61,9 +64,10 @@ const Header = ({ isAuthenticated = false }) => {
                 iconSize={18}
                 className="ml-2"
               >
-                Authority Login
+                {t('navbar.authorityLogin')}
               </Button>
             )}
+            <LanguageSwitcher />
           </nav>
 
           <button
@@ -103,9 +107,13 @@ const Header = ({ isAuthenticated = false }) => {
                 fullWidth
                 className="justify-start mt-2"
               >
-                Authority Login
+                {t('navbar.authorityLogin')}
               </Button>
             )}
+
+            <div className="mt-3 pt-3 border-t border-border">
+              <LanguageSwitcher />
+            </div>
           </nav>
         </div>
       )}

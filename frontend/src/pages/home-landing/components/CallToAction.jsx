@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
 const CallToAction = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <section className="bg-gradient-to-br from-primary to-primary/80 py-12 md:py-16 lg:py-20">
@@ -13,16 +15,16 @@ const CallToAction = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-full mb-4 md:mb-6">
             <Icon name="Sparkles" size={16} className="text-primary-foreground" />
             <span className="text-xs md:text-sm font-medium text-primary-foreground">
-              Make a Difference Today
+              {t('cta.makeADifference')}
             </span>
           </div>
 
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-foreground mb-4 md:mb-6">
-            Ready to Report Your First Issue?
+            {t('cta.readyToReport')}
           </h2>
 
           <p className="text-base md:text-lg lg:text-xl text-primary-foreground/90 mb-8 md:mb-10 max-w-2xl mx-auto">
-            Join thousands of engaged citizens making their communities better. Your report can spark real change in just minutes.
+            {t('cta.joinThousands')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-8 md:mb-10">
@@ -35,7 +37,7 @@ const CallToAction = () => {
               iconSize={20}
               className="shadow-elevation-3"
             >
-              Report Issue Now
+              {t('cta.reportNow')}
             </Button>
 
             <Button
@@ -47,7 +49,7 @@ const CallToAction = () => {
               iconSize={20}
               className="bg-white/10 border-white/30 text-primary-foreground hover:bg-white/20"
             >
-              View Dashboard
+              {t('cta.viewDashboard')}
             </Button>
           </div>
 
@@ -57,10 +59,10 @@ const CallToAction = () => {
                 <Icon name="Zap" size={24} className="text-primary-foreground" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-primary-foreground mb-2">
-                Quick & Easy
+                {t('cta.quickEasy')}
               </h3>
               <p className="text-xs md:text-sm text-primary-foreground/80">
-                Report issues in under 2 minutes
+                {t('cta.quickEasyDesc')}
               </p>
             </div>
 
@@ -69,10 +71,10 @@ const CallToAction = () => {
                 <Icon name="Eye" size={24} className="text-primary-foreground" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-primary-foreground mb-2">
-                Full Transparency
+                {t('cta.fullTransparency')}
               </h3>
               <p className="text-xs md:text-sm text-primary-foreground/80">
-                Track progress every step
+                {t('cta.fullTransparencyDesc')}
               </p>
             </div>
 
@@ -81,10 +83,10 @@ const CallToAction = () => {
                 <Icon name="CheckCircle" size={24} className="text-primary-foreground" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-primary-foreground mb-2">
-                Real Results
+                {t('cta.realResults')}
               </h3>
               <p className="text-xs md:text-sm text-primary-foreground/80">
-                See your impact on community
+                {t('cta.realResultsDesc')}
               </p>
             </div>
           </div>

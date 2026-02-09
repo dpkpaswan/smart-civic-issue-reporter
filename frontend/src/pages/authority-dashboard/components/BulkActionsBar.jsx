@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
 import { Checkbox } from '../../../components/ui/Checkbox';
@@ -11,13 +12,15 @@ const BulkActionsBar = ({
   onBulkAction,
   onClearSelection 
 }) => {
+  const { t } = useTranslation();
+
   const bulkActionOptions = [
-    { value: '', label: 'Select Action', disabled: true },
-    { value: 'in-progress', label: 'Mark as In Progress' },
-    { value: 'resolved', label: 'Mark as Resolved' },
-    { value: 'high', label: 'Set Priority: High' },
-    { value: 'medium', label: 'Set Priority: Medium' },
-    { value: 'low', label: 'Set Priority: Low' }
+    { value: '', label: t('bulkActions.selectAction'), disabled: true },
+    { value: 'in-progress', label: t('bulkActions.markInProgress') },
+    { value: 'resolved', label: t('bulkActions.markResolved') },
+    { value: 'high', label: t('bulkActions.setHighPriority') },
+    { value: 'medium', label: t('bulkActions.setMediumPriority') },
+    { value: 'low', label: t('bulkActions.setLowPriority') }
   ];
 
   const [selectedAction, setSelectedAction] = React.useState('');
@@ -40,7 +43,7 @@ const BulkActionsBar = ({
           <Checkbox
             checked={allSelected}
             onChange={onSelectAll}
-            label={`${selectedCount} of ${totalCount} selected`}
+            label={t('bulkActions.ofSelected', { selected: selectedCount, total: totalCount })}
             className="font-medium"
           />
           <Button
@@ -51,13 +54,13 @@ const BulkActionsBar = ({
             iconPosition="left"
             iconSize={16}
           >
-            Clear Selection
+            {t('bulkActions.clearSelection')}
           </Button>
         </div>
 
         <div className="flex items-end gap-3 w-full lg:w-auto">
           <Select
-            label="Bulk Action"
+            label={t('bulkActions.bulkAction')}
             options={bulkActionOptions}
             value={selectedAction}
             onChange={setSelectedAction}
@@ -71,7 +74,7 @@ const BulkActionsBar = ({
             iconPosition="left"
             iconSize={18}
           >
-            Apply
+            {t('bulkActions.apply')}
           </Button>
         </div>
       </div>

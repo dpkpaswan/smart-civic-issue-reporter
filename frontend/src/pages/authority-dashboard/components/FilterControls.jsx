@@ -1,43 +1,46 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Select from '../../../components/ui/Select';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 
 const FilterControls = ({ filters, onFilterChange, onReset, resultCount }) => {
+  const { t } = useTranslation();
+
   const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'submitted', label: 'Submitted' },
-    { value: 'in-progress', label: 'In Progress' },
-    { value: 'resolved', label: 'Resolved' }
+    { value: 'all', label: t('filterControls.allStatuses') },
+    { value: 'submitted', label: t('filterControls.submitted') },
+    { value: 'in-progress', label: t('filterControls.inProgress') },
+    { value: 'resolved', label: t('filterControls.resolved') }
   ];
 
   const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'road', label: 'Road & Infrastructure' },
-    { value: 'water', label: 'Water Supply' },
-    { value: 'electricity', label: 'Electricity' },
-    { value: 'waste', label: 'Waste Management' },
-    { value: 'street-light', label: 'Street Lighting' },
-    { value: 'drainage', label: 'Drainage' },
-    { value: 'other', label: 'Other' }
+    { value: 'all', label: t('filterControls.allCategories') },
+    { value: 'road', label: t('filterControls.road') },
+    { value: 'water', label: t('filterControls.waterSupply') },
+    { value: 'electricity', label: t('filterControls.electricity') },
+    { value: 'waste', label: t('filterControls.waste') },
+    { value: 'street-light', label: t('filterControls.streetLighting') },
+    { value: 'drainage', label: t('filterControls.drainage') },
+    { value: 'other', label: t('filterControls.other') }
   ];
 
   const priorityOptions = [
-    { value: 'all', label: 'All Priorities' },
-    { value: 'high', label: 'High Priority' },
-    { value: 'medium', label: 'Medium Priority' },
-    { value: 'low', label: 'Low Priority' }
+    { value: 'all', label: t('filterControls.allPriorities') },
+    { value: 'high', label: t('filterControls.highPriority') },
+    { value: 'medium', label: t('filterControls.mediumPriority') },
+    { value: 'low', label: t('filterControls.lowPriority') }
   ];
 
   return (
     <div className="bg-card rounded-lg border border-border p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg md:text-xl font-semibold text-foreground">
-          Filter Issues
+          {t('filterControls.filterIssues')}
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
-            {resultCount} {resultCount === 1 ? 'result' : 'results'}
+            {resultCount} {resultCount === 1 ? t('filterControls.result') : t('filterControls.results')}
           </span>
           <Button
             variant="ghost"
@@ -53,7 +56,7 @@ const FilterControls = ({ filters, onFilterChange, onReset, resultCount }) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Select
-          label="Status"
+          label={t('issuesTable.status')}
           options={statusOptions}
           value={filters?.status}
           onChange={(value) => onFilterChange('status', value)}
@@ -61,7 +64,7 @@ const FilterControls = ({ filters, onFilterChange, onReset, resultCount }) => {
         />
 
         <Select
-          label="Category"
+          label={t('issuesTable.category')}
           options={categoryOptions}
           value={filters?.category}
           onChange={(value) => onFilterChange('category', value)}
@@ -69,7 +72,7 @@ const FilterControls = ({ filters, onFilterChange, onReset, resultCount }) => {
         />
 
         <Select
-          label="Priority"
+          label={t('issuesTable.priority')}
           options={priorityOptions}
           value={filters?.priority}
           onChange={(value) => onFilterChange('priority', value)}
@@ -77,23 +80,23 @@ const FilterControls = ({ filters, onFilterChange, onReset, resultCount }) => {
         />
 
         <Input
-          label="Search Location"
+          label={t('filterControls.searchLocation')}
           type="search"
-          placeholder="Enter location..."
+          placeholder={t('filterControls.enterLocation')}
           value={filters?.location}
           onChange={(e) => onFilterChange('location', e?.target?.value)}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
-          label="From Date"
+          label={t('filterControls.fromDate')}
           type="date"
           value={filters?.dateFrom}
           onChange={(e) => onFilterChange('dateFrom', e?.target?.value)}
         />
 
         <Input
-          label="To Date"
+          label={t('filterControls.toDate')}
           type="date"
           value={filters?.dateTo}
           onChange={(e) => onFilterChange('dateTo', e?.target?.value)}

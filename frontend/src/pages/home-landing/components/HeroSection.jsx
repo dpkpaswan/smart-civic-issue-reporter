@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <section className="relative bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
@@ -22,16 +24,16 @@ const HeroSection = () => {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full mb-4 md:mb-6 animate-slide-in-left">
               <Icon name="Award" size={16} className="text-primary" />
-              <span className="text-xs md:text-sm font-medium text-primary">Trusted Platform</span>
+              <span className="text-xs md:text-sm font-medium text-primary">{t('hero.trusted')}</span>
             </div>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 md:mb-6 leading-tight animate-fade-in-up">
-              Your Voice,<br />
-              <span className="text-primary animate-slide-in-right">Your Community</span>
+              {t('hero.titleLine1')}<br />
+              <span className="text-primary animate-slide-in-right">{t('hero.titleLine2')}</span>
             </h1>
 
             <p className="text-base md:text-lg lg:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto lg:mx-0 animate-fade-in-up animate-stagger-1">
-              Report civic issues in seconds. Track progress transparently. Build a better community together with Smart Civic Reporter.
+              {t('hero.subtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start animate-bounce-in animate-stagger-2">
@@ -44,7 +46,7 @@ const HeroSection = () => {
                 iconSize={20}
                 className="shadow-elevation-2 hover:shadow-elevation-3 hover-lift button-ripple"
               >
-                Report Issue Now
+                {t('hero.reportBtn')}
               </Button>
 
               <Button
@@ -56,18 +58,18 @@ const HeroSection = () => {
                 iconSize={20}
                 className="hover-scale"
               >
-                View Public Issues
+                {t('hero.viewIssues')}
               </Button>
             </div>
 
             <div className="flex items-center justify-center lg:justify-start gap-4 md:gap-6 mt-6 md:mt-8 animate-fade-in-up animate-stagger-3">
               <div className="flex items-center gap-2 hover-glow">
                 <Icon name="Shield" size={20} className="text-success" />
-                <span className="text-xs md:text-sm text-muted-foreground">Secure & Private</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('hero.secure')}</span>
               </div>
               <div className="flex items-center gap-2 hover-glow">
                 <Icon name="Zap" size={20} className="text-warning" />
-                <span className="text-xs md:text-sm text-muted-foreground">Fast Response</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('hero.fastResponse')}</span>
               </div>
             </div>
           </div>
@@ -79,10 +81,10 @@ const HeroSection = () => {
                 <div className="text-center">
                   <Icon name="MapPin" size={80} className="text-primary mx-auto mb-4 animate-pulse-slow" />
                   <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-2">
-                    Community-Driven
+                    {t('hero.communityDriven')}
                   </h3>
                   <p className="text-sm md:text-base text-muted-foreground">
-                    Empowering citizens to create positive change through transparent civic engagement
+                    {t('hero.empowering')}
                   </p>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -12,19 +13,20 @@ const SubmitSection = ({
   citizenName = '',
   citizenEmail = '',
   onCitizenInfoChange,
-  location = null // Add location prop for validation display
+  location = null
 }) => {
+  const { t } = useTranslation();
   const isProcessing = isSubmitting || isUploadingImages;
   
   // Check location accuracy status for display
   const getLocationStatus = () => {
-    if (!location) return { status: 'missing', message: 'Location not detected' };
-    if (location.source === 'manual') return { status: 'manual', message: 'Manual address entered' };
-    if (!location.accuracy) return { status: 'unknown', message: 'GPS location detected' };
+    if (!location) return { status: 'missing', message: t('submit.notDetected') };
+    if (location.source === 'manual') return { status: 'manual', message: t('submit.manualAddress') };
+    if (!location.accuracy) return { status: 'unknown', message: t('submit.gpsDetected') };
     
-    if (location.accuracy <= 50) return { status: 'good', message: `GPS accurate to ±${location.accuracy}m` };
-    if (location.accuracy <= 100) return { status: 'fair', message: `GPS accurate to ±${location.accuracy}m (fair accuracy)` };
-    return { status: 'poor', message: `GPS accurate to ±${location.accuracy}m (poor accuracy)` };
+    if (location.accuracy <= 50) return { status: 'good', message: t('submit.gpsAccurate', { meters: location.accuracy }) };
+    if (location.accuracy <= 100) return { status: 'fair', message: `${t('submit.gpsAccurate', { meters: location.accuracy })} ${t('submit.fairAccuracy')}` };
+    return { status: 'poor', message: `${t('submit.gpsAccurate', { meters: location.accuracy })} ${t('submit.poorAccuracy')}` };
   };
 
   const locationStatus = getLocationStatus();
@@ -39,10 +41,10 @@ const SubmitSection = ({
           </div>
           <div>
             <h3 className="text-base lg:text-lg font-semibold text-foreground">
-              Your Contact Information
+              {t('submit.contactTitle')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              We need this to keep you updated on your report's progress
+              {t('submit.contactSubtitle')}
             </p>
           </div>
         </div>
@@ -50,11 +52,11 @@ const SubmitSection = ({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Full Name <span className="text-red-500">*</span>
+              {t('submit.fullName')} <span className="text-red-500">*</span>
             </label>
             <Input
               type="text"
-              placeholder="Enter your full name"
+              placeholder={t('submit.namePlaceholder')}
               value={citizenName}
               onChange={(e) => onCitizenInfoChange('citizenName', e.target.value)}
               className="w-full"
@@ -64,11 +66,11 @@ const SubmitSection = ({
           
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Email Address <span className="text-red-500">*</span>
+              {t('submit.email')} <span className="text-red-500">*</span>
             </label>
             <Input
               type="email"
-              placeholder="Enter your email address"
+              placeholder={t('submit.emailPlaceholder')}
               value={citizenEmail}
               onChange={(e) => onCitizenInfoChange('citizenEmail', e.target.value)}
               className="w-full"
@@ -100,7 +102,7 @@ const SubmitSection = ({
               />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Location Status</p>
+              <p className="text-sm font-medium text-foreground">{t('submit.locationStatus')}</p>
               <p className="text-xs text-muted-foreground">{locationStatus.message}</p>
             </div>
             {locationStatus.status === 'good' && (
@@ -117,7 +119,7 @@ const SubmitSection = ({
             <Icon name="AlertCircle" size={20} className="text-error flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-error mb-2">
-                Please fix the following issues:
+                {t('submit.fixIssues')}
               </h4>
               <ul className="space-y-1">
                 {validationErrors?.map((error, index) => (
@@ -141,14 +143,14 @@ const SubmitSection = ({
             </div>
             <div>
               <h3 className="text-base lg:text-lg font-semibold text-foreground">
-                Ready to Submit?
+                {t('submit.readyToSubmit')}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {isUploadingImages 
-                  ? 'Uploading images...' 
+                  ? t('submit.uploadingImages')
                   : isSubmitting 
-                    ? 'Creating your report...'
-                    : 'Your report will be sent to the relevant authorities for review and action'
+                    ? t('submit.creatingReport')
+                    : t('submit.willBeSent')
                 }
               </p>
             </div>
@@ -166,10 +168,10 @@ const SubmitSection = ({
             className="w-full lg:w-auto lg:min-w-[200px]"
           >
             {isUploadingImages 
-              ? 'Uploading Images...' 
+              ? t('submit.uploadingBtn')
               : isSubmitting 
-                ? 'Submitting Report...' 
-                : 'Submit Report'
+                ? t('submit.submittingBtn')
+                : t('submit.submitBtn')
             }
           </Button>
         </div>
@@ -178,7 +180,7 @@ const SubmitSection = ({
           <div className="flex items-start gap-2 text-xs text-muted-foreground">
             <Icon name="Shield" size={14} className="flex-shrink-0 mt-0.5" />
             <p>
-              Your report will be reviewed by local authorities. You'll receive a confirmation email with a tracking ID to monitor the progress of your issue.
+              {t('submit.reviewNote')}
             </p>
           </div>
         </div>

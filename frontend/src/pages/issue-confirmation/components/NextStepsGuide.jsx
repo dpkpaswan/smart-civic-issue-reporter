@@ -1,27 +1,30 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const NextStepsGuide = () => {
+  const { t } = useTranslation();
+
   const steps = [
     {
       icon: 'Bell',
-      title: 'Monitor Progress',
-      description: 'Check the public transparency dashboard regularly for status updates on your issue'
+      title: t('nextSteps.monitor'),
+      description: t('nextSteps.monitorDesc')
     },
     {
       icon: 'MessageSquare',
-      title: 'Stay Informed',
-      description: 'Authorities may request additional information or photos to better address your report'
+      title: t('nextSteps.stayInformed'),
+      description: t('nextSteps.stayInformedDesc')
     },
     {
       icon: 'Users',
-      title: 'Engage Community',
-      description: 'Share your tracking link with neighbors to increase visibility and priority'
+      title: t('nextSteps.engage'),
+      description: t('nextSteps.engageDesc')
     },
     {
       icon: 'ThumbsUp',
-      title: 'Provide Feedback',
-      description: 'Once resolved, you can verify the fix and rate the response quality'
+      title: t('nextSteps.provideFeedback'),
+      description: t('nextSteps.provideFeedbackDesc')
     }
   ];
 
@@ -30,7 +33,7 @@ const NextStepsGuide = () => {
       <div className="flex items-center gap-2 mb-4 md:mb-5 lg:mb-6">
         <Icon name="Lightbulb" size={20} className="text-primary md:w-6 md:h-6" />
         <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-foreground">
-          What Happens Next?
+          {t('nextSteps.title')}
         </h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6">

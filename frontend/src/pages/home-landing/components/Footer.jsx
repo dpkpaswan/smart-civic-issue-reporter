@@ -1,26 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const Footer = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const currentYear = new Date()?.getFullYear();
 
   const footerLinks = {
     platform: [
-      { label: 'Report Issue', path: '/report-issue' },
-      { label: 'Track Issues', path: '/public-transparency' },
-      { label: 'Authority Login', path: '/authority-dashboard' }
+      { label: t('footer.reportIssue'), path: '/report-issue' },
+      { label: t('footer.trackIssues'), path: '/public-transparency' },
+      { label: t('footer.authorityLogin'), path: '/authority-dashboard' }
     ],
     support: [
-      { label: 'Help Center', path: '#' },
-      { label: 'Privacy Policy', path: '#' },
-      { label: 'Terms of Service', path: '#' }
+      { label: t('footer.helpCenter'), path: '#' },
+      { label: t('footer.privacyPolicy'), path: '#' },
+      { label: t('footer.termsOfService'), path: '#' }
     ],
     connect: [
-      { label: 'Contact Us', path: '#' },
-      { label: 'Community Forum', path: '#' },
-      { label: 'Feedback', path: '#' }
+      { label: t('footer.contactUs'), path: '#' },
+      { label: t('footer.communityForum'), path: '#' },
+      { label: t('footer.feedback'), path: '#' }
     ]
   };
 
@@ -40,10 +42,10 @@ const Footer = () => {
               <div className="header-logo">
                 <Icon name="Shield" size={24} className="header-logo-icon" />
               </div>
-              <span className="header-logo-text">Smart Civic Reporter</span>
+              <span className="header-logo-text">{t('footer.appName')}</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-              Empowering citizens to create positive change through transparent civic engagement and community-driven issue resolution.
+              {t('footer.tagline')}
             </p>
             <div className="flex gap-3">
               {socialLinks?.map((social) => (
@@ -64,7 +66,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Platform</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">{t('footer.platform')}</h3>
             <ul className="space-y-3">
               {footerLinks?.platform?.map((link) => (
                 <li key={link?.label}>
@@ -80,7 +82,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Support</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">{t('footer.support')}</h3>
             <ul className="space-y-3">
               {footerLinks?.support?.map((link) => (
                 <li key={link?.label}>
@@ -96,7 +98,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Connect</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">{t('footer.connect')}</h3>
             <ul className="space-y-3">
               {footerLinks?.connect?.map((link) => (
                 <li key={link?.label}>
@@ -119,13 +121,13 @@ const Footer = () => {
             </div>
 
             <p className="text-xs md:text-sm text-muted-foreground text-center md:text-left">
-              &copy; {currentYear} Smart Civic Reporter. All rights reserved.
+              &copy; {currentYear} {t('footer.allRightsReserved')}
             </p>
 
             <div className="flex items-center gap-2">
               <Icon name="Shield" size={16} className="text-success" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                Secured & Verified
+                {t('footer.securedVerified')}
               </span>
             </div>
           </div>

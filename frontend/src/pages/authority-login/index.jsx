@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../utils/toast';
 import Button from '../../components/ui/Button';
@@ -8,6 +9,7 @@ import Icon from '../../components/AppIcon';
 import { LoadingButton } from '../../components/ui/Loading';
 
 const AuthorityLogin = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
@@ -22,6 +24,7 @@ const AuthorityLogin = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    document.title = t('authorityLogin.pageTitle');
     if (isAuthenticated) {
       const from = location.state?.from?.pathname || '/authority-dashboard';
       navigate(from, { replace: true });
@@ -32,15 +35,15 @@ const AuthorityLogin = () => {
     const newErrors = {};
     
     if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
+      newErrors.username = t('authorityLogin.usernameRequired');
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+      newErrors.username = t('authorityLogin.usernameMinLength');
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('authorityLogin.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('authorityLogin.passwordMinLength');
     }
 
     setErrors(newErrors);
@@ -63,17 +66,17 @@ const AuthorityLogin = () => {
       });
 
       if (result.success) {
-        toast.success('Login successful! Welcome to Authority Dashboard');
+        toast.success(t('authorityLogin.loginSuccess'));
         
         // Redirect to the intended page or dashboard
         const from = location.state?.from?.pathname || '/authority-dashboard';
         navigate(from, { replace: true });
       } else {
-        toast.error(result.error || 'Login failed. Please check your credentials.');
+        toast.error(result.error || t('authorityLogin.loginFailed'));
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('An error occurred during login. Please try again.');
+      toast.error(t('authorityLogin.loginError'));
     } finally {
       setIsLoading(false);
     }
@@ -98,9 +101,9 @@ const AuthorityLogin = () => {
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <Icon name="Shield" size={32} className="text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Authority Dashboard</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">{t('authorityLogin.title')}</h1>
             <p className="text-blue-100 text-sm">
-              Secure access for government officials
+              {t('authorityLogin.subtitle')}
             </p>
           </div>
 
@@ -109,13 +112,13 @@ const AuthorityLogin = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
+                  {t('authorityLogin.username')}
                 </label>
                 <Input
                   type="text"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
-                  placeholder="Enter your government username"
+                  placeholder={t('authorityLogin.username')}
                   error={errors.username}
                   className="w-full"
                 />
@@ -123,13 +126,13 @@ const AuthorityLogin = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  {t('authorityLogin.password')}
                 </label>
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('authorityLogin.password')}
                   error={errors.password}
                   className="w-full"
                   leftIcon="Lock"
@@ -143,7 +146,7 @@ const AuthorityLogin = () => {
                 isLoading={isLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
               >
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? t('authorityLogin.signingIn') : t('authorityLogin.signIn')}
               </LoadingButton>
             </form>
 
@@ -151,12 +154,12 @@ const AuthorityLogin = () => {
             <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
               <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                 <Icon name="Info" size={16} className="text-blue-600" />
-                Demo Credentials
+                {t('authorityLogin.demoCredentials')}
               </h3>
               <div className="text-xs text-gray-600 space-y-1">
-                <p><strong>Username:</strong> roads.admin</p>
-                <p><strong>Password:</strong> SecureRoad2026!</p>
-                <p className="text-gray-500 mt-2">Other test users: waste.admin, environment.admin, admin.super</p>
+                <p><strong>{t('authorityLogin.usernameLabel')}:</strong> roads.admin</p>
+                <p><strong>{t('authorityLogin.passwordLabel')}:</strong> SecureRoad2026!</p>
+                <p className="text-gray-500 mt-2">{t('authorityLogin.otherUsers')}: waste.admin, environment.admin, admin.super</p>
               </div>
             </div>
 
@@ -180,7 +183,7 @@ const AuthorityLogin = () => {
         {/* Security Notice */}
         <div className="mt-6 text-center text-xs text-gray-500">
           <Icon name="Shield" size={14} className="inline mr-1" />
-          This is a secure government portal. Unauthorized access is prohibited.
+          {t('authorityLogin.securePortal')}
         </div>
       </div>
     </div>

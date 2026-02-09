@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import { LoadingOverlay, SkeletonTable } from '../../components/ui/Loading';
@@ -17,6 +18,7 @@ import PriorityUpdateModal from './components/PriorityUpdateModal';
 import IssueDetailModal from './components/IssueDetailModal';
 
 const AuthorityDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -38,18 +40,19 @@ const AuthorityDashboard = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'submittedDate', direction: 'desc' });
   const [activeModal, setActiveModal] = useState(null);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const welcomeShownRef = useRef(false);
 
   // Load issues from API
   useEffect(() => {
     loadIssues();
   }, []);
 
-  // Show welcome message when dashboard loads
+  // Show welcome message only once when dashboard first loads
   useEffect(() => {
-    if (user && !isLoading) {
-      // Small delay to ensure page is loaded
+    if (user && !isLoading && !welcomeShownRef.current) {
+      welcomeShownRef.current = true;
       setTimeout(() => {
-        toast.success(`Welcome back, ${user.username || 'Authority'}! Ready to manage civic issues.`);
+        toast.success(`Welcome back, ${user.username || t('dashboard.authorityUser')}.`);
       }, 500);
     }
   }, [user, isLoading]);
@@ -64,36 +67,73 @@ const AuthorityDashboard = () => {
       });
       
       if (response.success) {
-        // Transform API data to match component expectations
-        const transformedIssues = response.data.map(issue => ({
+        // Role-based filtering: authority users see only their department, admin/super_admin see all
+        let filteredData = response.data;
+        const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+        if (!isAdmin && user?.department_id) {
+          filteredData = response.data.filter(issue => 
+            issue.assignedDepartment?.id === user.department_id || !issue.assignedDepartment
+          );
+        }
+
+        // Transform API data — preserve ALL backend fields
+        const transformedIssues = filteredData.map(issue => ({
           id: issue.id,
-          image: issue.images?.[0] || '', // First image or empty
+          image: issue.images?.[0] || '',
           imageAlt: `Issue image for ${issue.category}`,
           description: issue.description,
           category: issue.category,
           categoryIcon: getCategoryIcon(issue.category),
           location: typeof issue.location === 'string' ? issue.location : 
                    (issue.location?.address || issue.location?.street || 'Location not provided'),
-          coordinates: issue.latitude && issue.longitude ? 
-            { lat: parseFloat(issue.latitude), lng: parseFloat(issue.longitude) } : 
-            (issue.location?.lat && issue.location?.lng ? 
-             { lat: parseFloat(issue.location.lat), lng: parseFloat(issue.location.lng) } : null),
+          coordinates: issue.location?.lat && issue.location?.lng ? 
+             { lat: parseFloat(issue.location.lat), lng: parseFloat(issue.location.lng) } : null,
           priority: issue.priority || 'medium',
-          submittedDate: issue.createdAt,
+          severityLevel: issue.severityLevel || 'medium',
+          confidenceScore: issue.confidenceScore || 0,
+          submittedDate: issue.submittedAt || issue.createdAt,
           status: issue.status,
           reporterId: issue.citizenEmail || 'Unknown',
-          department: getDepartmentByCategory(issue.category),
-          assignedTo: issue.assignedTo || '',
-          notes: issue.resolutionNotes || ''
+          citizenName: issue.citizenName || 'Anonymous',
+          citizenPhone: issue.citizenPhone,
+          // Real department and user from backend auto-routing
+          department: issue.assignedDepartment?.name || null,
+          departmentCode: issue.assignedDepartment?.code || null,
+          assignedDepartment: issue.assignedDepartment || null,
+          assignedTo: issue.assignedUser?.full_name || null,
+          assignedUser: issue.assignedUser || null,
+          // SLA tracking
+          slaDeadline: issue.slaDeadline || null,
+          estimatedResolutionTime: issue.estimatedResolutionTime || null,
+          actualResolutionTime: issue.actualResolutionTime || null,
+          // Status lifecycle & history
+          statusHistory: issue.statusHistory || [],
+          routingLogs: issue.routingLogs || [],
+          // Duplicate detection
+          isDuplicate: issue.isDuplicate || false,
+          duplicateOfIssueId: issue.duplicateOfIssueId || null,
+          // AI classification metadata
+          aiClassification: issue.aiClassification || null,
+          // Resolution
+          notes: issue.resolutionNotes || '',
+          resolutionImages: issue.resolutionImages || [],
+          // Timestamps
+          assignedAt: issue.assignedAt,
+          inProgressAt: issue.inProgressAt,
+          resolvedAt: issue.resolvedAt,
+          closedAt: issue.closedAt,
+          // Escalation
+          autoEscalated: issue.autoEscalated || false,
+          escalationReason: issue.escalationReason || null
         }));
         
         setIssues(transformedIssues);
       } else {
-        toast.error('Failed to load issues');
+        toast.error(t('dashboard.failedToLoad'));
       }
     } catch (error) {
       console.error('Error loading issues:', error);
-      toast.error(error.message || 'Failed to load issues');
+      toast.error(error.message || t('dashboard.failedToLoad'));
     } finally {
       setIsLoading(false);
     }
@@ -102,6 +142,14 @@ const AuthorityDashboard = () => {
   // Helper function to get category icon
   const getCategoryIcon = (category) => {
     const iconMap = {
+      'pothole': 'Construction',
+      'garbage': 'Trash2',
+      'streetlight': 'Lightbulb',
+      'graffiti': 'PaintBucket',
+      'water': 'Droplet',
+      'traffic': 'Car',
+      'sidewalk': 'Footprints',
+      'other': 'AlertTriangle',
       'Road & Infrastructure': 'Construction',
       'Roads & Infrastructure': 'Construction',
       'Street Lighting': 'Lightbulb',
@@ -118,35 +166,42 @@ const AuthorityDashboard = () => {
     return iconMap[category] || 'AlertTriangle';
   };
 
-  // Helper function to get department by category
-  const getDepartmentByCategory = (category) => {
-    const departmentMap = {
-      'Road & Infrastructure': 'Public Works',
-      'Roads & Infrastructure': 'Public Works',
-      'Street Lighting': 'Electrical Services',
-      'Electricity': 'Power Grid',
-      'Waste Management': 'Sanitation',
-      'Sanitation & Waste': 'Sanitation',
-      'Water Supply': 'Water Department',
-      'Drainage': 'Public Works',
-      'Parks & Recreation': 'Parks Department',
-      'Traffic': 'Traffic Management',
-      'Public Safety': 'Safety Department',
-      'Environment': 'Environmental Services'
-    };
-    return departmentMap[category] || 'General Services';
-  };
-
   const metrics = useMemo(() => {
     const today = new Date()?.toDateString();
+    
+    // Calculate real average resolution time
+    const resolvedIssues = issues?.filter(i => i?.resolvedAt && i?.submittedDate);
+    let avgTime = 'N/A';
+    if (resolvedIssues.length > 0) {
+      const totalHours = resolvedIssues.reduce((acc, issue) => {
+        const submitted = new Date(issue.submittedDate);
+        const resolved = new Date(issue.resolvedAt);
+        return acc + (resolved - submitted) / (1000 * 60 * 60);
+      }, 0);
+      const avgHours = totalHours / resolvedIssues.length;
+      avgTime = avgHours < 24 
+        ? `${Math.round(avgHours)}h` 
+        : `${(avgHours / 24).toFixed(1)}d`;
+    }
+
+    // Count SLA breaches
+    const now = new Date();
+    const slaBreached = issues?.filter(i => 
+      i?.slaDeadline && 
+      new Date(i.slaDeadline) < now && 
+      !['resolved', 'closed'].includes(i?.status)
+    )?.length;
+
     return {
-      pending: issues?.filter((i) => i?.status === 'submitted')?.length,
-      inProgress: issues?.filter((i) => i?.status === 'in-progress')?.length,
+      pending: issues?.filter((i) => i?.status === 'submitted' || i?.status === 'assigned')?.length,
+      inProgress: issues?.filter((i) => i?.status === 'in_progress' || i?.status === 'in-progress')?.length,
       resolvedToday: issues?.filter((i) =>
-      i?.status === 'resolved' &&
-      new Date(i.submittedDate)?.toDateString() === today
+        i?.status === 'resolved' &&
+        new Date(i.resolvedAt || i.submittedDate)?.toDateString() === today
       )?.length,
-      avgResolutionTime: "2.5 days"
+      avgResolutionTime: avgTime,
+      slaBreached,
+      total: issues?.length
     };
   }, [issues]);
 
@@ -240,7 +295,7 @@ const AuthorityDashboard = () => {
 
   const handleBulkAction = async (action) => {
     if (selectedIssues.length === 0) {
-      toast.warning('Please select issues to perform bulk action');
+      toast.warning(t('dashboard.selectBulkAction'));
       return;
     }
 
@@ -265,10 +320,10 @@ const AuthorityDashboard = () => {
       await loadIssues();
       setSelectedIssues([]);
       
-      toast.success(`Successfully updated ${selectedIssues.length} issues`);
+      toast.success(t('dashboard.bulkUpdateSuccess', { count: selectedIssues.length }));
     } catch (error) {
       console.error('Error in bulk action:', error);
-      toast.error(error.message || 'Failed to update issues');
+      toast.error(error.message || t('dashboard.failedToUpdate'));
     } finally {
       setIsUpdating(false);
     }
@@ -292,24 +347,20 @@ const AuthorityDashboard = () => {
     setActiveModal('details');
   };
 
-  const handleUpdateStatus = async (issueId, newStatus, notes) => {
+  const handleUpdateStatus = async (issueId, newStatus, notes, resolutionImages = []) => {
     try {
       setIsUpdating(true);
       
-      // Call API to update status
-      await issuesApi.updateStatus(issueId, newStatus, notes);
+      // Call API to update status (with resolution images for resolved)
+      await issuesApi.updateStatus(issueId, newStatus, notes, resolutionImages);
       
-      // Update local state
-      setIssues((prev) => prev.map((issue) =>
-        issue.id === issueId
-          ? { ...issue, status: newStatus, notes }
-          : issue
-      ));
+      // Reload full data from server to pick up all server-side changes
+      await loadIssues();
       
-      toast.success('Issue status updated successfully');
+      toast.success(t('dashboard.statusUpdateSuccess'));
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error(error.message || 'Failed to update issue status');
+      toast.error(error.message || t('dashboard.statusUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -322,17 +373,13 @@ const AuthorityDashboard = () => {
       // Call API to update priority
       await issuesApi.updatePriority(issueId, newPriority);
       
-      // Update local state
-      setIssues((prev) => prev.map((issue) =>
-        issue.id === issueId
-          ? { ...issue, priority: newPriority }
-          : issue
-      ));
+      // Reload full data from server
+      await loadIssues();
       
-      toast.success('Issue priority updated successfully');
+      toast.success(t('dashboard.priorityUpdateSuccess'));
     } catch (error) {
       console.error('Error updating priority:', error);
-      toast.error(error.message || 'Failed to update issue priority');
+      toast.error(error.message || t('dashboard.priorityUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -341,11 +388,11 @@ const AuthorityDashboard = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logged out successfully');
+      toast.success(t('dashboard.logoutSuccess'));
       navigate('/authority-login');
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Error logging out');
+      toast.error(t('dashboard.logoutError'));
     }
   };
 
@@ -363,25 +410,36 @@ const AuthorityDashboard = () => {
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 md:mb-8">
               <div>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                  Authority Dashboard
+                  {t('dashboard.title')}
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground">
-                  Manage and resolve civic issues efficiently
+                  {t('dashboard.subtitle')}
                 </p>
               </div>
               
               <div className="flex items-center gap-4">
-                {/* User Info */}
+                {/* User Info with Role */}
                 <div className="hidden md:flex flex-col items-end">
                   <div className="flex items-center gap-2 mb-1">
                     <Icon name="User" size={16} className="text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">
-                      {user?.name || user?.email || 'Authority User'}
+                      {user?.full_name || user?.username || t('dashboard.authorityUser')}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {user?.role || 'Government Official'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      user?.role === 'admin' || user?.role === 'super_admin' 
+                        ? 'bg-purple-100 text-purple-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {user?.role?.replace('_', ' ') || 'authority'}
+                    </span>
+                    {user?.department_name && (
+                      <span className="text-xs text-muted-foreground">
+                        {user.department_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Logout Button */}

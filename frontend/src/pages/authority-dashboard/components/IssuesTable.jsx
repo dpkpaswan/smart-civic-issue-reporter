@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import IssueTableRow from './IssueTableRow';
 import { Checkbox } from '../../../components/ui/Checkbox';
@@ -15,16 +16,20 @@ const IssuesTable = ({
   sortConfig,
   onSort
 }) => {
+  const { t } = useTranslation();
+
   const columns = [
     { key: 'select', label: '', sortable: false },
-    { key: 'image', label: 'Image', sortable: false },
-    { key: 'description', label: 'Description', sortable: true },
-    { key: 'category', label: 'Category', sortable: true },
-    { key: 'location', label: 'Location', sortable: true },
-    { key: 'priority', label: 'Priority', sortable: true },
-    { key: 'submittedDate', label: 'Submitted', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
-    { key: 'actions', label: 'Actions', sortable: false }
+    { key: 'image', label: t('issuesTable.image'), sortable: false },
+    { key: 'description', label: t('issuesTable.description'), sortable: true },
+    { key: 'category', label: t('issuesTable.category'), sortable: true },
+    { key: 'priority', label: t('issuesTable.priority'), sortable: true },
+    { key: 'severityLevel', label: t('issuesTable.severity'), sortable: true },
+    { key: 'department', label: t('issuesTable.deptAssigned'), sortable: true },
+    { key: 'slaDeadline', label: t('issuesTable.sla'), sortable: true },
+    { key: 'submittedDate', label: t('issuesTable.submitted'), sortable: true },
+    { key: 'status', label: t('issuesTable.status'), sortable: true },
+    { key: 'actions', label: t('issuesTable.actions'), sortable: false }
   ];
 
   const handleSort = (key) => {
@@ -45,10 +50,10 @@ const IssuesTable = ({
             <Icon name="Inbox" size={32} className="text-muted-foreground" />
           </div>
           <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">
-            No Issues Found
+            {t('issuesTable.noIssuesFound')}
           </h3>
           <p className="text-sm md:text-base text-muted-foreground">
-            No issues match your current filters. Try adjusting your search criteria.
+            {t('issuesTable.noIssuesHint')}
           </p>
         </div>
       </div>

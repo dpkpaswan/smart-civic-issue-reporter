@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { LoadingButton } from '../../../components/ui/Loading';
 import Select from '../../../components/ui/Select';
 
 const PriorityUpdateModal = ({ issue, onClose, onUpdate, isUpdating = false }) => {
+  const { t } = useTranslation();
   const [priority, setPriority] = useState(issue?.priority || 'medium');
 
   const priorityOptions = [
     { 
       value: 'high', 
-      label: 'High Priority',
-      description: 'Requires immediate attention'
+      label: t('priorityUpdate.high'),
+      description: t('priorityUpdate.highDesc')
     },
     { 
       value: 'medium', 
-      label: 'Medium Priority',
-      description: 'Standard processing time'
+      label: t('priorityUpdate.medium'),
+      description: t('priorityUpdate.mediumDesc')
     },
     { 
       value: 'low', 
-      label: 'Low Priority',
-      description: 'Can be addressed later'
+      label: t('priorityUpdate.low'),
+      description: t('priorityUpdate.lowDesc')
     }
   ];
 
@@ -38,7 +40,7 @@ const PriorityUpdateModal = ({ issue, onClose, onUpdate, isUpdating = false }) =
       <div className="bg-card rounded-lg border border-border shadow-elevation-4 w-full max-w-md">
         <div className="border-b border-border p-4 md:p-6 flex items-center justify-between">
           <h2 className="text-lg md:text-xl font-semibold text-foreground">
-            Update Priority
+            {t('priorityUpdate.title')}
           </h2>
           <button
             onClick={onClose}
@@ -52,7 +54,7 @@ const PriorityUpdateModal = ({ issue, onClose, onUpdate, isUpdating = false }) =
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <p className="text-sm font-medium text-foreground">
-              Issue #{issue?.id}
+              {t('priorityUpdate.issueId')}{issue?.id}
             </p>
             <p className="text-sm text-muted-foreground line-clamp-2">
               {issue?.description}
@@ -60,8 +62,8 @@ const PriorityUpdateModal = ({ issue, onClose, onUpdate, isUpdating = false }) =
           </div>
 
           <Select
-            label="Priority Level"
-            description="Set the priority level for this issue"
+            label={t('priorityUpdate.priorityLevel')}
+            description={t('priorityUpdate.setPriority')}
             options={priorityOptions}
             value={priority}
             onChange={setPriority}
@@ -74,8 +76,7 @@ const PriorityUpdateModal = ({ issue, onClose, onUpdate, isUpdating = false }) =
               variant="outline"
               onClick={onClose}
               fullWidth
-            >
-              Cancel
+            >              {t('priorityUpdate.cancel')}
             </Button>
             <LoadingButton
               type="submit"
@@ -87,7 +88,7 @@ const PriorityUpdateModal = ({ issue, onClose, onUpdate, isUpdating = false }) =
               isLoading={isUpdating}
               disabled={isUpdating}
             >
-              {isUpdating ? 'Updating...' : 'Update Priority'}
+              {isUpdating ? t('priorityUpdate.updating') : t('priorityUpdate.updateBtn')}
             </LoadingButton>
           </div>
         </form>

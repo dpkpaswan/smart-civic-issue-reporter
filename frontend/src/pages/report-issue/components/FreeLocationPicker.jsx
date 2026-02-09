@@ -1,30 +1,53 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation, RefreshCw, AlertTriangle, CheckCircle, AlertCircle, Wifi, Zap, Smartphone } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { MapPin, Navigation, RefreshCw, AlertCircle, CheckCircle, Search, X, Loader2 } from 'lucide-react';
 import useAccurateLocationDetection from '../../../hooks/useAccurateLocationDetection';
 import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
+import LocationMap from '../../../components/LocationMap';
 import { toast } from '../../../utils/toast';
 
-const FreeLocationPicker = ({ 
-  location, 
-  onLocationChange, 
+/**
+ * Geocode an address string using OpenStreetMap Nominatim (free, no key).
+ * Returns { lat, lng, displayName } or null.
+ */
+async function geocodeAddress(query) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.map(item => ({
+    lat: parseFloat(item.lat),
+    lng: parseFloat(item.lon),
+    displayName: item.display_name,
+    details: item.address || {}
+  }));
+}
+
+const FreeLocationPicker = ({
+  location,
+  onLocationChange,
   className = "",
-  required = true 
+  required = true
 }) => {
+  const { t } = useTranslation();
   const [manualAddress, setManualAddress] = useState('');
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [isGeocoding, setIsGeocodingLocal] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeMode, setActiveMode] = useState('auto'); // 'auto' | 'manual'
+  const debounceRef = useRef(null);
+  const inputRef = useRef(null);
+  const wrapperRef = useRef(null);
 
-  // Enhanced mobile detection
-  const isMobile = typeof window !== 'undefined' && 
+  const isMobile = typeof window !== 'undefined' &&
     (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-     window.innerWidth <= 768);
+      window.innerWidth <= 768);
 
-  // Use free location detection hook with mobile optimizations
   const {
     location: detectedLocation,
     accuracy,
     isDetecting,
-    isGeocoding,
     error,
     addressDetails,
     isAccuracyAcceptable,
@@ -33,372 +56,313 @@ const FreeLocationPicker = ({
     retryDetection
   } = useAccurateLocationDetection({
     enableAutoDetection: true,
-    accuracyThreshold: isMobile ? 75 : 50, // More lenient for mobile
-    maxRetries: 5 // More retries for mobile
+    accuracyThreshold: isMobile ? 75 : 50000,
+    maxRetries: 5
   });
 
-  // Update parent component when location changes
-  React.useEffect(() => {
+  // Push detected location to parent
+  useEffect(() => {
     if (detectedLocation && onLocationChange) {
       onLocationChange(detectedLocation);
     }
   }, [detectedLocation, onLocationChange]);
 
-  // Handle manual address submission
-  const handleManualSubmit = () => {
-    if (!manualAddress.trim()) {
-      toast.error('Please enter a valid address');
+  // Auto-switch to manual entry when detection fails
+  useEffect(() => {
+    if (error && !detectedLocation) {
+      setShowManualEntry(true);
+      setActiveMode('manual');
+    }
+  }, [error, detectedLocation]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Debounced geocoding as user types
+  const handleAddressInput = useCallback((value) => {
+    setManualAddress(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (value.trim().length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
+    debounceRef.current = setTimeout(async () => {
+      setIsGeocodingLocal(true);
+      try {
+        const results = await geocodeAddress(value.trim());
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setIsGeocodingLocal(false);
+      }
+    }, 400);
+  }, []);
+
+  // User picks a suggestion
+  const handleSelectSuggestion = (item) => {
     const manualLocation = {
-      coordinates: null,
+      coordinates: { latitude: item.lat, longitude: item.lng },
       accuracy: null,
-      address: manualAddress.trim(),
+      address: item.displayName,
       addressSource: 'manual',
       timestamp: new Date().toISOString(),
-      source: 'manual',
+      source: 'manual_geocoded',
       addressDetails: {
-        formattedAddress: manualAddress.trim(),
-        streetAddress: manualAddress.trim(),
-        manualEntry: true
+        formattedAddress: item.displayName,
+        streetAddress: [item.details.road, item.details.house_number].filter(Boolean).join(' ') || '',
+        area: item.details.suburb || item.details.neighbourhood || '',
+        city: item.details.city || item.details.town || item.details.village || '',
+        state: item.details.state || '',
+        manualEntry: true,
+        geocoded: true
       }
     };
-
-    console.log('📝 Manual address entered:', manualLocation);
     onLocationChange?.(manualLocation);
+    setManualAddress(item.displayName);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    toast.success(t('location.locationSetFromAddress'));
+  };
+
+  // Switch to manual mode
+  const switchToManual = () => {
+    setShowManualEntry(true);
+    setActiveMode('manual');
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  // Switch back to auto
+  const switchToAuto = () => {
     setShowManualEntry(false);
+    setActiveMode('auto');
     setManualAddress('');
-    toast.success('Address added successfully!');
+    setSuggestions([]);
+    detectLocation();
   };
 
-  // Get accuracy display info
-  const getAccuracyDisplay = () => {
+  // Accuracy badge
+  const accuracyBadge = (() => {
     if (!accuracy || !accuracyStatus) return null;
+    const { quality, color } = accuracyStatus;
+    const colorMap = { success: 'bg-green-100 text-green-700', warning: 'bg-amber-100 text-amber-700', error: 'bg-red-100 text-red-700' };
+    return { label: `${quality} · ±${Math.round(accuracy)}m`, cls: colorMap[color] || colorMap.warning };
+  })();
 
-    const { quality, color, icon } = accuracyStatus;
-    const IconComponent = icon === 'CheckCircle' ? CheckCircle : 
-                         icon === 'AlertTriangle' ? AlertTriangle : AlertCircle;
-
-    return {
-      icon: IconComponent,
-      text: `±${Math.round(accuracy)} meters`,
-      quality: quality.charAt(0).toUpperCase() + quality.slice(1),
-      color: color === 'success' ? 'text-green-600' : 
-             color === 'warning' ? 'text-yellow-600' : 'text-red-600'
-    };
-  };
-
-  const accuracyDisplay = getAccuracyDisplay();
+  const hasCoords = location?.coordinates?.latitude && location?.coordinates?.longitude;
 
   return (
-    <div className={`space-y-3 sm:space-y-4 ${className}`}>
-      {/* Mobile-optimized Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
+    <div className={`space-y-3 ${className}`}>
+      {/* Header with mode toggle */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Navigation className="h-5 w-5 text-blue-600 flex-shrink-0" />
-          <h3 className="text-base sm:text-lg font-semibold">📍 Location Detection</h3>
-        </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <div className="flex items-center gap-1 text-green-600">
-            <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span>100% Free</span>
+          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+            <MapPin className="h-4 w-4" />
           </div>
-          {isMobile && (
-            <div className="flex items-center gap-1 text-blue-600">
-              <Smartphone className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span>Mobile Optimized</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile-friendly Detection Status */}
-      {isDetecting && (
-        <div className="flex items-start gap-3 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <RefreshCw className="h-5 w-5 text-blue-600 animate-spin flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm sm:text-base text-blue-800 font-medium">📱 Detecting your location...</p>
-            <p className="text-xs sm:text-sm text-blue-600 mt-1">
-              {isMobile ? 'Using mobile GPS for high accuracy' : 'Using high-accuracy GPS detection'}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">{t('location.title')}</h3>
+            <p className="text-xs text-gray-500">
+              {activeMode === 'auto' ? t('location.autoDetecting') : t('location.searchAddress')}
             </p>
-            {isMobile && (
-              <p className="text-xs text-blue-500 mt-1">
-                💡 For best results, ensure location services are enabled
-              </p>
-            )}
           </div>
         </div>
-      )}
 
-      {/* Mobile-optimized Geocoding Status */}
-      {isGeocoding && (
-        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-          <RefreshCw className="h-4 w-4 text-green-600 animate-spin flex-shrink-0" />
-          <p className="text-xs sm:text-sm text-green-700">Getting address information...</p>
+        {/* Mode toggle pills */}
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+          <button
+            type="button"
+            onClick={switchToAuto}
+            className={`px-3 py-1.5 flex items-center gap-1 transition-colors ${activeMode === 'auto' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            <Navigation className="h-3 w-3" /> {t('location.auto')}
+          </button>
+          <button
+            type="button"
+            onClick={switchToManual}
+            className={`px-3 py-1.5 flex items-center gap-1 transition-colors ${activeMode === 'manual' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            <Search className="h-3 w-3" /> {t('location.manual')}
+          </button>
         </div>
-      )}
-
-      {/* Mobile-optimized Error Display */}
-      {error && (
-        <div className="p-3 sm:p-4 bg-red-50 rounded-lg border border-red-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm sm:text-base text-red-800 font-medium break-words">
-                {error.message}
-              </h4>
-              <p className="text-xs sm:text-sm text-red-700 mt-1 break-words">
-                {error.instructions}
-              </p>
-              
-              {/* Mobile-specific location help */}
-              {isMobile && error.type === 'PERMISSION_DENIED' && (
-                <div className="mt-2 p-2 bg-red-100 rounded text-xs text-red-600">
-                  <p className="font-medium">📱 Mobile Help:</p>
-                  <ul className="mt-1 space-y-1 list-disc list-inside">
-                    <li>Check browser settings → Location permissions</li>
-                    <li>Enable device location services</li>
-                    <li>Try refreshing the page after enabling</li>
-                  </ul>
-                </div>
-              )}
-              
-              {error.type !== 'PERMISSION_DENIED' && (
-                <div className="flex flex-col sm:flex-row gap-2 mt-3">
-                  <Button
-                    onClick={retryDetection}
-                    className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none touch-manipulation"
-                    disabled={isDetecting}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Try Again
-                  </Button>
-                  <Button
-                    onClick={() => setShowManualEntry(true)}
-                    variant="outline"
-                    className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none touch-manipulation"
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Enter Manually
-                  </Button>
-                </div>
-              )}
-              
-              {error.type === 'PERMISSION_DENIED' && (
-                <Button
-                  onClick={() => setShowManualEntry(true)}
-                  variant="outline"
-                  className="mt-3 border-blue-600 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto touch-manipulation"
-                >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Enter Address Manually
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Manual Address Confirmation */}
-      {location && location.addressSource === 'manual' && (
-        <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                <span className="text-sm sm:text-base text-blue-800 font-medium">📝 Manual Address Entered</span>
-                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-full text-xs w-fit">
-                  <MapPin className="h-3 w-3" />
-                  <span>Manual Entry</span>
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-blue-700 leading-relaxed break-words">
-                {location.address}
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Button
-              onClick={() => setShowManualEntry(true)}
-              variant="outline"
-              className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs px-3 py-2 touch-manipulation"
-            >
-              Edit Address
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile-optimized Location Information */}
-      {detectedLocation && (
-        <div className="space-y-3">
-          {/* Main Address Display */}
-          <div className="p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                  <span className="text-sm sm:text-base text-green-800 font-medium">✅ Location Detected</span>
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-full text-xs w-fit">
-                    <Wifi className="h-3 w-3" />
-                    <span>OpenStreetMap</span>
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-green-700 leading-relaxed break-words">
-                  {detectedLocation.address}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile-optimized Accuracy Information */}
-          {accuracyDisplay && (
-            <div className={`p-3 rounded-lg ${
-              accuracyDisplay.color.includes('green') ? 'bg-green-50 border-green-200' :
-              accuracyDisplay.color.includes('yellow') ? 'bg-yellow-50 border-yellow-200' :
-              'bg-red-50 border-red-200'
-            } border`}>
-              <div className="flex items-center gap-2 flex-wrap">
-                <accuracyDisplay.icon className={`h-4 w-4 ${accuracyDisplay.color} flex-shrink-0`} />
-                <span className={`text-xs sm:text-sm font-medium ${accuracyDisplay.color}`}>
-                  {accuracyDisplay.quality} Accuracy: {accuracyDisplay.text}
-                </span>
-              </div>
-              {!isAccuracyAcceptable && (
-                <p className="text-xs text-gray-600 mt-2">
-                  For civic reporting, accuracy better than {isMobile ? '75' : '50'} meters is recommended.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Mobile-optimized Address Components */}
-          {addressDetails && !addressDetails.coordinatesOnly && (
-            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <h4 className="text-xs sm:text-sm text-gray-800 font-medium mb-2">📍 Address Details:</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
-                {addressDetails.streetAddress && (
-                  <div className="break-words">
-                    <span className="text-gray-600">Street:</span>
-                    <p className="text-gray-800">{addressDetails.streetAddress}</p>
-                  </div>
-                )}
-                {addressDetails.area && (
-                  <div className="break-words">
-                    <span className="text-gray-600">Area:</span>
-                    <p className="text-gray-800">{addressDetails.area}</p>
-                  </div>
-                )}
-                {addressDetails.city && (
-                  <div className="break-words">
-                    <span className="text-gray-600">City:</span>
-                    <p className="text-gray-800">{addressDetails.city}</p>
-                  </div>
-                )}
-                {addressDetails.state && (
-                  <div className="break-words">
-                    <span className="text-gray-600">State:</span>
-                    <p className="text-gray-800">{addressDetails.state}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Mobile-optimized Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            {!isAccuracyAcceptable && accuracy > (isMobile ? 75 : 50) && (
-              <Button
-                onClick={retryDetection}
-                className="bg-orange-600 hover:bg-orange-700 text-white flex-1 text-sm py-3 sm:py-2 touch-manipulation"
-                disabled={isDetecting}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isDetecting ? 'animate-spin' : ''}`} />
-                Try for Better Accuracy
-              </Button>
-            )}
-            <Button
-              onClick={detectLocation}
-              variant="outline"
-              className="border-blue-600 text-blue-600 hover:bg-blue-50 text-sm py-3 sm:py-2 touch-manipulation"
-              disabled={isDetecting}
-            >
-              <Navigation className="h-4 w-4 mr-2" />
-              Re-detect Location
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile-optimized Manual Entry Section */}
-      <div className="border-t pt-3 sm:pt-4">
-        {!showManualEntry ? (
-          <div className="space-y-2">
-            <Button
-              onClick={() => setShowManualEntry(true)}
-              variant="outline"
-              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-3 sm:py-2 touch-manipulation"
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              Enter Address Manually
-            </Button>
-            {!location && !isDetecting && (
-              <p className="text-xs text-gray-500 text-center">
-                Can't detect your location? Enter your address manually to continue
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-gray-700">Manual Address Entry</span>
-            </div>
-            <Input
-              placeholder={isMobile ? "Enter your address..." : "Enter your address (e.g., 123 Main St, City, State)"}
-              value={manualAddress}
-              onChange={(e) => setManualAddress(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-              className="text-sm w-full"
-            />
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={handleManualSubmit}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex-1 text-sm py-3 sm:py-2 touch-manipulation"
-                disabled={!manualAddress.trim()}
-              >
-                Use This Address
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowManualEntry(false);
-                  setManualAddress('');
-                }}
-                variant="outline"
-                className="border-gray-300 text-gray-700 text-sm py-3 sm:py-2 touch-manipulation"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
-      
-      {/* Mobile help tip */}
-      {isMobile && !detectedLocation && !isDetecting && (
-        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-xs text-blue-700">
-          <div className="flex items-start gap-2">
-            <Smartphone className="h-4 w-4 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium">📱 Mobile Tips:</p>
-              <ul className="mt-1 space-y-1 list-disc list-inside">
-                <li>Move outdoors for better GPS accuracy</li>
-                <li>Ensure location services are enabled</li>
-                <li>Grant location permission when prompted</li>
-              </ul>
+
+      {/* ── AUTO DETECTION MODE ── */}
+      {activeMode === 'auto' && (
+        <div className="space-y-3 animate-fade-in">
+          {/* Detecting spinner */}
+          {isDetecting && (
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+              <span className="text-sm text-blue-700">{t('location.detecting')}</span>
             </div>
+          )}
+
+          {/* Error */}
+          {error && !isDetecting && (
+            <div className="p-3 bg-red-50 rounded-lg border border-red-100">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 text-sm">
+                  <p className="text-red-700 font-medium">{error.message}</p>
+                  <p className="text-red-500 text-xs mt-0.5">{error.instructions}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <Button onClick={retryDetection} disabled={isDetecting} className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5">
+                  <RefreshCw className="h-3 w-3 mr-1" /> {t('location.retry')}
+                </Button>
+                <Button onClick={switchToManual} variant="outline" className="border-gray-300 text-gray-700 text-xs px-3 py-1.5">
+                  <Search className="h-3 w-3 mr-1" /> {t('location.searchBtn')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Detected location card */}
+          {detectedLocation && !isDetecting && (
+            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-green-800">{t('location.detected')}</span>
+                    {accuracyBadge && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${accuracyBadge.cls}`}>
+                        {accuracyBadge.label}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-green-700 mt-1 break-words leading-relaxed">
+                    {detectedLocation.address}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button type="button" onClick={retryDetection} disabled={isDetecting} className="text-xs text-green-700 hover:text-green-900 flex items-center gap-1">
+                  <RefreshCw className={`h-3 w-3 ${isDetecting ? 'animate-spin' : ''}`} /> {t('location.reDetect')}
+                </button>
+                <button type="button" onClick={switchToManual} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                  <Search className="h-3 w-3" /> {t('location.editAddress')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MANUAL / SEARCH MODE ── */}
+      {activeMode === 'manual' && (
+        <div className="space-y-2 animate-fade-in" ref={wrapperRef}>
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={t('location.typeAddress')}
+              value={manualAddress}
+              onChange={(e) => handleAddressInput(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              className="w-full pl-9 pr-9 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-gray-400"
+            />
+            {isGeocoding && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
+            )}
+            {!isGeocoding && manualAddress && (
+              <button
+                type="button"
+                onClick={() => { setManualAddress(''); setSuggestions([]); setShowSuggestions(false); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
+
+          {/* Suggestions dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto divide-y divide-gray-100 animate-fade-in">
+              {suggestions.map((item, i) => (
+                <li
+                  key={i}
+                  onClick={() => handleSelectSuggestion(item)}
+                  className="flex items-start gap-2 px-3 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700 leading-snug line-clamp-2">{item.displayName}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* No results */}
+          {showSuggestions && suggestions.length === 0 && manualAddress.trim().length >= 3 && !isGeocoding && (
+            <p className="text-xs text-gray-500 px-1">{t('location.noResults')}</p>
+          )}
+
+          {/* Currently selected manual location */}
+          {location && location.source === 'manual_geocoded' && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800 leading-snug break-words">
+                <span className="font-medium">{t('location.selected')}</span>
+                {location.address}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MAP (shown whenever we have coordinates) ── */}
+      {hasCoords && (
+        <div className="animate-fade-in">
+          <LocationMap
+            latitude={location.coordinates.latitude}
+            longitude={location.coordinates.longitude}
+            accuracy={location.source === 'manual_geocoded' ? null : accuracy}
+            address={location.address}
+          />
+        </div>
+      )}
+
+      {/* Address details grid */}
+      {(addressDetails && !addressDetails.coordinatesOnly) || (location?.addressDetails?.geocoded) ? (
+        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <p className="text-xs font-medium text-gray-600 mb-1.5">{t('location.addressDetails')}</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            {(addressDetails?.streetAddress || location?.addressDetails?.streetAddress) && (
+              <div><span className="text-gray-500">{t('location.street')}</span> <span className="text-gray-800">{addressDetails?.streetAddress || location?.addressDetails?.streetAddress}</span></div>
+            )}
+            {(addressDetails?.area || location?.addressDetails?.area) && (
+              <div><span className="text-gray-500">{t('location.area')}</span> <span className="text-gray-800">{addressDetails?.area || location?.addressDetails?.area}</span></div>
+            )}
+            {(addressDetails?.city || location?.addressDetails?.city) && (
+              <div><span className="text-gray-500">{t('location.city')}</span> <span className="text-gray-800">{addressDetails?.city || location?.addressDetails?.city}</span></div>
+            )}
+            {(addressDetails?.state || location?.addressDetails?.state) && (
+              <div><span className="text-gray-500">{t('location.state')}</span> <span className="text-gray-800">{addressDetails?.state || location?.addressDetails?.state}</span></div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Empty state — no location yet */}
+      {!location && !isDetecting && !error && activeMode === 'auto' && (
+        <div className="text-center py-6 text-gray-400">
+          <Navigation className="h-8 w-8 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">{t('location.waitingForLocation')}</p>
         </div>
       )}
     </div>

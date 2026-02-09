@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useGoogleHighAccuracyLocation } from '../../../hooks/useGoogleHighAccuracyLocation';
@@ -14,6 +15,7 @@ import { useGoogleHighAccuracyLocation } from '../../../hooks/useGoogleHighAccur
  * - Production-ready for civic issue reporting
  */
 const GoogleLocationPicker = ({ location, onLocationChange }) => {
+  const { t } = useTranslation();
   const [manualAddress, setManualAddress] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
   const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
@@ -97,8 +99,8 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
    * Get processing status for display
    */
   const getProcessingStatus = () => {
-    if (isDetecting) return 'Detecting precise GPS location...';
-    if (isGeocoding) return 'Getting address information...';
+    if (isDetecting) return t('googleLocation.detectingPrecise');
+    if (isGeocoding) return t('googleLocation.gettingAddress');
     return null;
   };
 
@@ -113,12 +115,12 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base lg:text-lg font-semibold text-foreground">Location</h3>
+          <h3 className="text-base lg:text-lg font-semibold text-foreground">{t('location.title')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
             {getProcessingStatus() || 
-             (location ? 'High-accuracy location detected' : 
-              error ? 'Location detection failed' :
-              'Ready for precise location detection')}
+             (location ? t('googleLocation.highAccuracyDetected') : 
+              error ? t('googleLocation.detectionFailed') :
+              t('googleLocation.readyForDetection'))}
           </p>
         </div>
         <div className="flex gap-2">
@@ -133,7 +135,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
             iconSize={16}
           >
             <span className="hidden sm:inline">
-              {retryCount > 0 ? 'Retry' : 'Detect'}
+              {retryCount > 0 ? t('location.retry') : t('location.autoDetect')}
             </span>
           </Button>
           <Button
@@ -144,7 +146,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
             iconPosition="left"
             iconSize={16}
           >
-            <span className="hidden sm:inline">Manual</span>
+            <span className="hidden sm:inline">{t('location.manual')}</span>
           </Button>
         </div>
       </div>
@@ -155,9 +157,9 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
           <div className="flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-yellow-600 mt-0.5" />
             <div className="flex-1">
-              <h4 className="text-sm font-medium text-yellow-800">Google Maps API Key Required</h4>
+              <h4 className="text-sm font-medium text-yellow-800">{t('googleLocation.apiKeyRequired')}</h4>
               <p className="text-xs text-yellow-600 mt-1">
-                To enable high-accuracy geocoding, please add REACT_APP_GOOGLE_MAPS_API_KEY to your environment variables.
+                {t('googleLocation.apiKeyDesc')}
               </p>
               <Button
                 variant="outline"
@@ -165,7 +167,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
                 onClick={() => setShowApiKeyWarning(false)}
                 className="mt-2 border-yellow-200 text-yellow-600 hover:bg-yellow-50"
               >
-                Continue with Basic Detection
+                {t('googleLocation.continueBasic')}
               </Button>
             </div>
           </div>
@@ -181,10 +183,10 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">
-                {isDetecting ? 'High-Accuracy GPS Detection' : 'Google Maps Geocoding'}
+                {isDetecting ? t('googleLocation.highAccuracy') : t('googleLocation.googleGeocoding')}
               </p>
               <p className="text-xs text-muted-foreground">
-                {isDetecting ? 'Using GPS, Wi-Fi, and cellular triangulation...' : 'Converting coordinates to detailed address...'}
+                {isDetecting ? t('googleLocation.usingTriangulation') : t('googleLocation.convertingCoords')}
               </p>
             </div>
           </div>
@@ -223,9 +225,9 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
           <div className="flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-yellow-600 mt-0.5" />
             <div className="flex-1">
-              <h4 className="text-sm font-medium text-yellow-800">Accuracy Warning</h4>
+              <h4 className="text-sm font-medium text-yellow-800">{t('googleLocation.accuracyWarning')}</h4>
               <p className="text-xs text-yellow-600 mt-1">
-                Current GPS accuracy: {accuracyDisplay}. For civic reporting, accuracy better than 50 meters is recommended.
+                {t('googleLocation.currentAccuracy', { accuracy: accuracyDisplay })}
               </p>
               <div className="flex gap-2 mt-2">
                 <Button
@@ -237,7 +239,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
                   iconPosition="left"
                   iconSize={14}
                 >
-                  Try for Better Accuracy
+                  {t('googleLocation.tryBetter')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -245,7 +247,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
                   onClick={() => {}} // Accept current accuracy
                   className="text-yellow-600"
                 >
-                  Proceed Anyway
+                  {t('googleLocation.proceedAnyway')}
                 </Button>
               </div>
             </div>
@@ -259,17 +261,17 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Enter Address Manually
+                {t('googleLocation.enterManually')}
               </label>
               <textarea
                 value={manualAddress}
                 onChange={(e) => setManualAddress(e?.target?.value)}
-                placeholder="Enter the complete address where the civic issue is located..."
+                placeholder={t('googleLocation.enterComplete')}
                 className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Include street address, area, city, state, and postal code for precise issue reporting.
+                {t('googleLocation.includeDetails')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -282,7 +284,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
                 iconPosition="left"
                 iconSize={16}
               >
-                Save Address
+                {t('googleLocation.saveAddress')}
               </Button>
               <Button
                 variant="ghost"
@@ -292,7 +294,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
                   setManualAddress('');
                 }}
               >
-                Cancel
+                {t('googleLocation.cancel')}
               </Button>
             </div>
           </div>
@@ -367,19 +369,19 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
                   {location.addressSource === 'google_maps' && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs border border-green-200">
                       <Icon name="CheckCircle" size={12} />
-                      Google Maps Verified
+                      {t('googleLocation.googleVerified')}
                     </span>
                   )}
                   {location.addressSource === 'coordinates' && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs border border-blue-200">
                       <Icon name="Navigation" size={12} />
-                      GPS Coordinates
+                      {t('googleLocation.gpsCoords')}
                     </span>
                   )}
                   {location.addressSource === 'manual' && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 text-gray-700 text-xs border border-gray-200">
                       <Icon name="Edit" size={12} />
-                      Manually Entered
+                      {t('googleLocation.manuallyEntered')}
                     </span>
                   )}
                 </div>
@@ -412,10 +414,10 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
               <Icon name="MapPin" size={32} className="text-primary" />
             </div>
             <h4 className="text-sm font-semibold text-foreground mb-2">
-              Precise Location Detection
+              {t('googleLocation.preciseDetection')}
             </h4>
             <p className="text-sm text-muted-foreground mb-4">
-              Get high-accuracy GPS coordinates and detailed address information for your civic issue report
+              {t('googleLocation.preciseDesc')}
             </p>
             <Button
               variant="outline"
@@ -425,7 +427,7 @@ const GoogleLocationPicker = ({ location, onLocationChange }) => {
               iconPosition="left"
               iconSize={16}
             >
-              Detect My Location
+              {t('googleLocation.detectBtn')}
             </Button>
           </div>
         </div>

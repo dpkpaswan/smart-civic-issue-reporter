@@ -10,6 +10,7 @@ import IssueCard from './components/IssueCard';
 import FilterPanel from './components/FilterPanel';
 import StatsHeader from './components/StatsHeader';
 import IssueDetailsModal from './components/IssueDetailsModal';
+import { useTranslation } from 'react-i18next';
 
 const PublicTransparency = () => {
   // API and loading state
@@ -27,53 +28,65 @@ const PublicTransparency = () => {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
 
+  const { t } = useTranslation();
+
   // Load issues from API on component mount
   useEffect(() => {
-    document.title = "Public Transparency - Smart Civic Issue Reporter";
+    document.title = t('transparency.title') + " - " + t('navbar.appName');
     loadIssues();
-  }, []);
+  }, [t]);
 
   const loadIssues = async () => {
     try {
       setIsLoading(true);
       
-      // Get all issues for public transparency view
-      const response = await issuesApi.getAll();
+      // Get all issues for public transparency view (no auth token → all issues)
+      const response = await issuesApi.getPublic();
       
       if (response.success) {
-        // Transform API data to match component expectations
+        // Transform API data — preserve backend fields for public display
         const transformedIssues = response.data.map((issue, index) => ({
           id: issue.id,
-          title: issue.description || 'Civic Issue Report',
-          description: issue.description || 'No description provided',
+          title: issue.description || t('transparency.issueReport'),
+          description: issue.description || t('transparency.noDescription'),
           category: issue.category,
           categoryIcon: getCategoryIcon(issue.category),
           status: issue.status,
+          priority: issue.priority || 'medium',
+          severityLevel: issue.severityLevel || 'medium',
           location: typeof issue.location === 'string' ? issue.location : 
-                   (issue.location?.address || issue.location?.street || 'Location not provided'),
-          coordinates: issue.latitude && issue.longitude ? 
-            { lat: parseFloat(issue.latitude), lng: parseFloat(issue.longitude) } : 
-            (issue.location?.lat && issue.location?.lng ? 
-             { lat: parseFloat(issue.location.lat), lng: parseFloat(issue.location.lng) } : null),
-          image: issue.images?.[0] || getPlaceholderImage(issue.category),
+                   (issue.location?.address || issue.location?.street || t('transparency.locationNotProvided')),
+          coordinates: issue.location?.lat && issue.location?.lng ? 
+             { lat: parseFloat(issue.location.lat), lng: parseFloat(issue.location.lng) } : null,
+          image: issue.images?.[0] || null,
+          images: issue.images || [],
+          resolutionImages: issue.resolutionImages || [],
           imageAlt: `${issue.category} issue reported`,
-          submittedDate: issue.createdAt,
-          resolvedDate: issue.status === 'resolved' ? issue.updatedAt : null,
+          submittedDate: issue.submittedAt || issue.createdAt,
+          resolvedDate: issue.resolvedAt || null,
+          // Department info (public-safe)
+          department: issue.assignedDepartment?.name || null,
+          // SLA status (public accountability)
+          slaDeadline: issue.slaDeadline || null,
+          // Resolution
           authorityResponse: issue.resolutionNotes || (
-            issue.status === 'in-progress' ? 'Issue is currently being addressed by the relevant department.' :
-            issue.status === 'resolved' ? 'Issue has been resolved by the appropriate authorities.' :
-            issue.status === 'submitted' ? 'Issue has been submitted and is awaiting review.' :
+            issue.status === 'in_progress' || issue.status === 'in-progress' ? t('transparency.inProgressDesc') :
+            issue.status === 'resolved' ? t('transparency.resolvedDesc') :
+            issue.status === 'assigned' ? t('transparency.assignedDesc') :
+            issue.status === 'submitted' ? t('transparency.submittedDesc') :
             null
-          )
+          ),
+          // Status history for transparency
+          statusHistory: issue.statusHistory || []
         }));
         
         setIssues(transformedIssues);
       } else {
-        toast.error('Failed to load issues');
+        toast.error(t('transparency.failedToLoad'));
       }
     } catch (error) {
       console.error('Error loading issues:', error);
-      toast.error(error.message || 'Failed to load issues');
+      toast.error(error.message || t('transparency.failedToLoad'));
     } finally {
       setIsLoading(false);
     }
@@ -82,6 +95,14 @@ const PublicTransparency = () => {
   // Helper function to get category icon
   const getCategoryIcon = (category) => {
     const iconMap = {
+      'pothole': 'Construction',
+      'garbage': 'Trash2',
+      'streetlight': 'Lightbulb',
+      'graffiti': 'PaintBucket',
+      'water': 'Droplet',
+      'traffic': 'Car',
+      'sidewalk': 'Footprints',
+      'other': 'AlertTriangle',
       'Road & Infrastructure': 'Construction',
       'Roads & Infrastructure': 'Construction', 
       'Street Lighting': 'Lightbulb',
@@ -98,22 +119,6 @@ const PublicTransparency = () => {
     return iconMap[category] || 'AlertTriangle';
   };
 
-  // Helper function to get placeholder image for category
-  const getPlaceholderImage = (category) => {
-    const placeholders = {
-      'Road & Infrastructure': 'https://images.unsplash.com/photo-1728340964368-59c3192e44e6',
-      'Roads & Infrastructure': 'https://images.unsplash.com/photo-1728340964368-59c3192e44e6',
-      'Street Lighting': 'https://images.unsplash.com/photo-1723378574780-727b23bc3950',
-      'Electricity': 'https://images.unsplash.com/photo-1723378574780-727b23bc3950', 
-      'Waste Management': 'https://images.unsplash.com/photo-1612626957978-6ba7195f329c',
-      'Sanitation & Waste': 'https://images.unsplash.com/photo-1612626957978-6ba7195f329c',
-      'Water Supply': 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e',
-      'Drainage': 'https://images.unsplash.com/photo-1693497540664-3384fcf6fb74',
-      'Parks & Recreation': 'https://images.unsplash.com/photo-1591729982144-318ad4370809'
-    };
-    return placeholders[category] || 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd';
-  };
-
   // Calculate statistics from actual data
   const stats = useMemo(() => {
     if (isLoading || issues.length === 0) {
@@ -127,17 +132,17 @@ const PublicTransparency = () => {
 
     const total = issues.length;
     const resolved = issues.filter((issue) => issue.status === 'resolved').length;
-    const inProgress = issues.filter((issue) => issue.status === 'in-progress').length;
+    const inProgress = issues.filter((issue) => ['in_progress', 'in-progress'].includes(issue.status)).length;
 
-    const resolvedIssues = issues.filter((issue) => issue.resolvedDate);
-    const avgResponse = resolvedIssues.length > 0 ?
+    const resolvedWithDates = issues.filter((issue) => issue.resolvedDate);
+    const avgResponse = resolvedWithDates.length > 0 ?
       Math.round(
-        resolvedIssues.reduce((acc, issue) => {
+        resolvedWithDates.reduce((acc, issue) => {
           const submitted = new Date(issue.submittedDate);
-          const resolved = new Date(issue.resolvedDate);
-          const days = Math.ceil((resolved - submitted) / (1000 * 60 * 60 * 24));
+          const resolvedDate = new Date(issue.resolvedDate);
+          const days = Math.ceil((resolvedDate - submitted) / (1000 * 60 * 60 * 24));
           return acc + days;
-        }, 0) / resolvedIssues.length
+        }, 0) / resolvedWithDates.length
       ) :
       0;
 
@@ -154,13 +159,16 @@ const PublicTransparency = () => {
 
     if (filters?.category !== 'all') {
       const categoryMap = {
-        'roads': ['Roads & Infrastructure', 'Road & Infrastructure'],
-        'sanitation': ['Sanitation & Waste', 'Waste Management'],
-        'water': ['Water Supply'],
-        'electricity': ['Electricity', 'Street Lighting'],
+        'roads': ['Roads & Infrastructure', 'Road & Infrastructure', 'pothole', 'sidewalk'],
+        'sanitation': ['Sanitation & Waste', 'Waste Management', 'garbage'],
+        'water': ['Water Supply', 'water'],
+        'electricity': ['Electricity', 'Street Lighting', 'streetlight'],
         'parks': ['Parks & Recreation'],
         'safety': ['Public Safety'],
-        'environment': ['Environment']
+        'environment': ['Environment'],
+        'traffic': ['Traffic', 'traffic'],
+        'graffiti': ['graffiti'],
+        'other': ['other']
       };
       
       const targetCategories = categoryMap[filters.category] || [];
@@ -232,10 +240,10 @@ const PublicTransparency = () => {
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex-1 min-w-0">
                   <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-                    Public Transparency Dashboard
+                    {t('transparency.title')}
                   </h1>
                   <p className="text-sm lg:text-base text-muted-foreground">
-                    Track community issues and monitor government responsiveness in real-time
+                    {t('transparency.subtitle')}
                   </p>
                 </div>
                 <Button
@@ -246,7 +254,7 @@ const PublicTransparency = () => {
                   iconSize={18}
                   className="lg:hidden flex-shrink-0">
 
-                  Filters
+                  {t('transparency.filters')}
                 </Button>
               </div>
 
@@ -265,7 +273,7 @@ const PublicTransparency = () => {
               <div>
                 <div className="flex items-center justify-between mb-4 lg:mb-6">
                   <p className="text-sm text-muted-foreground">
-                    Showing <span className="font-semibold text-foreground">{filteredIssues?.length}</span> {filteredIssues?.length === 1 ? 'issue' : 'issues'}
+                    {t('transparency.showingIssues', { count: filteredIssues?.length })} {filteredIssues?.length === 1 ? t('transparency.issue') : t('transparency.issues')}
                   </p>
                   <Button
                     variant="ghost"
@@ -276,7 +284,7 @@ const PublicTransparency = () => {
                     iconSize={16}
                     className="hidden lg:flex">
 
-                    Reset Filters
+                    {t('transparency.resetFilters')}
                   </Button>
                 </div>
 
@@ -293,10 +301,10 @@ const PublicTransparency = () => {
                         <Icon name="Search" size={32} className="text-muted-foreground" />
                       </div>
                       <h3 className="text-lg lg:text-xl font-semibold text-foreground mb-2">
-                        No issues found
+                        {t('transparency.noIssuesFound')}
                       </h3>
                       <p className="text-sm text-muted-foreground mb-6">
-                        Try adjusting your filters or search terms to find what you're looking for
+                        {t('transparency.noIssuesHint')}
                       </p>
                       <Button
                       variant="outline"
@@ -304,7 +312,7 @@ const PublicTransparency = () => {
                       iconName="RotateCcw"
                       iconPosition="left">
 
-                        Clear All Filters
+                        {t('transparency.clearAllFilters')}
                       </Button>
                     </div>
                   </div>

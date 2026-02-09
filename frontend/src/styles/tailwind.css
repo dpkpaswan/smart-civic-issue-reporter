@@ -7,6 +7,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix Leaflet map compatibility with Tailwind CSS reset */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 0;
+}
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-control {
+  z-index: auto;
+}
+.leaflet-control {
+  z-index: 800;
+}
+.leaflet-pane {
+  z-index: 400;
+}
+
 @layer base {
   :root {
     /* Primary Colors */

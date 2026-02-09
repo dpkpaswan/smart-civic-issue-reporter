@@ -1,35 +1,38 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const TrackingTimeline = ({ estimatedResolutionDays }) => {
+  const { t } = useTranslation();
+
   const timelineSteps = [
     {
       icon: 'CheckCircle',
-      title: 'Issue Submitted',
-      description: 'Your report has been received and logged in our system',
+      title: t('timeline.submitted'),
+      description: t('timeline.submittedDesc'),
       status: 'completed',
-      time: 'Just now'
+      time: t('timeline.justNow')
     },
     {
       icon: 'Eye',
-      title: 'Under Review',
-      description: 'Local authorities are reviewing your submission',
+      title: t('timeline.underReview'),
+      description: t('timeline.underReviewDesc'),
       status: 'current',
-      time: 'Within 24 hours'
+      time: t('timeline.within24h')
     },
     {
       icon: 'Wrench',
-      title: 'In Progress',
-      description: 'Work will begin once review is complete',
+      title: t('timeline.inProgress'),
+      description: t('timeline.inProgressDesc'),
       status: 'upcoming',
-      time: `2-3 days`
+      time: t('timeline.twoThreeDays')
     },
     {
       icon: 'CheckCircle2',
-      title: 'Resolved',
-      description: 'Issue will be marked as resolved with documentation',
+      title: t('timeline.resolved'),
+      description: t('timeline.resolvedDesc'),
       status: 'upcoming',
-      time: `${estimatedResolutionDays} days`
+      time: t('timeline.estimatedDays', { days: estimatedResolutionDays })
     }
   ];
 
@@ -64,7 +67,7 @@ const TrackingTimeline = ({ estimatedResolutionDays }) => {
       <div className="flex items-center gap-2 mb-4 md:mb-5 lg:mb-6">
         <Icon name="Clock" size={20} className="text-primary md:w-6 md:h-6" />
         <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-foreground">
-          Resolution Timeline
+          {t('timeline.title')}
         </h2>
       </div>
       <div className="space-y-4 md:space-y-5 lg:space-y-6">
@@ -106,8 +109,7 @@ const TrackingTimeline = ({ estimatedResolutionDays }) => {
         <div className="flex items-start gap-2">
           <Icon name="Info" size={18} className="text-primary flex-shrink-0 mt-0.5 md:w-5 md:h-5" />
           <p className="text-xs md:text-sm text-foreground">
-            Estimated resolution time: <span className="font-semibold">{estimatedResolutionDays} days</span>. 
-            You'll receive updates at each stage via the public transparency dashboard.
+            {t('timeline.estimatedNote', { days: estimatedResolutionDays })}
           </p>
         </div>
       </div>

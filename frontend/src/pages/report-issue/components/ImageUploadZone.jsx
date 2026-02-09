@@ -1,9 +1,13 @@
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
+import { uploadApi } from '../../../utils/api';
+import { toast } from '../../../utils/toast';
 
-const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
+const ImageUploadZone = ({ images = [], onImagesChange, onAIClassification = null, onAIClassificationStart = null, isClassifying = false, maxImages = 5 }) => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [imageFiles, setImageFiles] = useState([]); // Store actual File objects
   const fileInputRef = useRef(null);
@@ -27,7 +31,7 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
     handleFiles(files);
   };
 
-  const handleFiles = (files) => {
+  const handleFiles = async (files) => {
     const validImageFiles = files?.filter(file => file?.type?.startsWith('image/'));
     
     if (imageFiles?.length + validImageFiles?.length > maxImages) {
@@ -48,8 +52,62 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
 
     const allPreviews = [...images, ...newImagePreviews];
     
-    // Pass the actual File objects to parent component
+    // Pass the actual File objects to parent component first
     onImagesChange(newFiles);
+    
+    // Trigger AI classification for the first new image (if callback provided)
+    if (onAIClassification && validImageFiles.length > 0) {
+      if (onAIClassificationStart) onAIClassificationStart(); // Notify parent that classification started
+      await classifyFirstImage(validImageFiles[0]);
+    }
+  };
+  
+  const classifyFirstImage = async (imageFile) => {
+    try {
+      const response = await uploadApi.uploadAndClassifyImage(imageFile);
+      
+      if (response.success && response.data.aiClassification) {
+        const aiResult = response.data.aiClassification;
+        
+        // Notify parent component about AI prediction
+        onAIClassification({
+          category: aiResult.category,
+          confidence: aiResult.confidence,
+          explanation: aiResult.explanation,
+          needsReview: aiResult.needsReview,
+          wasReclassified: aiResult.wasReclassified
+        });
+        
+        // Show success message
+        toast.success(`AI detected: ${aiResult.category} (${Math.round(aiResult.confidence * 100)}% confidence)`);
+      }
+    } catch (error) {
+      console.error('AI classification failed:', error);
+      
+      // Show more specific error messages
+      let errorMessage = t('imageUpload.aiFailed');
+      if (error.message.includes('API key')) {
+        errorMessage = t('imageUpload.aiNotConfigured');
+      } else if (error.message.includes('quota')) {
+        errorMessage = t('imageUpload.aiQuotaExceeded');
+      } else if (error.message.includes('network') || error.message.includes('timeout')) {
+        errorMessage = t('imageUpload.aiUnavailable');
+      }
+      
+      toast.error(errorMessage);
+      
+      // Notify parent about classification failure
+      if (onAIClassification) {
+        onAIClassification({
+          category: null,
+          confidence: 0,
+          explanation: t('imageUpload.aiClassificationFailed'),
+          needsReview: true,
+          error: error.message
+        });
+      }
+
+    }
   };
 
   const handleFileSelect = (e) => {
@@ -89,12 +147,19 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base lg:text-lg font-semibold text-foreground">Upload Photos</h3>
+          <h3 className="text-base lg:text-lg font-semibold text-foreground">{t('imageUpload.title')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Add up to {maxImages} photos ({imageFiles?.length}/{maxImages})
+            {t('imageUpload.addPhotos', { max: maxImages })} ({imageFiles?.length}/{maxImages})
+            {onAIClassification && t('imageUpload.aiAnalyze')}
           </p>
         </div>
         <div className="flex gap-2">
+          {isClassifying && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
+              <Icon name="Bot" size={14} className="animate-pulse" />
+              <span>{t('imageUpload.aiAnalyzing')}</span>
+            </div>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -104,7 +169,7 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
             iconSize={16}
             disabled={imageFiles?.length >= maxImages}
           >
-            <span className="hidden sm:inline">Camera</span>
+            <span className="hidden sm:inline">{t('imageUpload.camera')}</span>
           </Button>
           <Button
             variant="outline"
@@ -115,7 +180,7 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
             iconSize={16}
             disabled={imageFiles?.length >= maxImages}
           >
-            <span className="hidden sm:inline">Browse</span>
+            <span className="hidden sm:inline">{t('imageUpload.browse')}</span>
           </Button>
         </div>
       </div>
@@ -155,10 +220,10 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
               <Icon name="ImagePlus" size={32} className="text-primary" />
             </div>
             <h4 className="text-base lg:text-lg font-semibold text-foreground mb-2">
-              Upload Issue Photos
+              {t('imageUpload.uploadTitle')}
             </h4>
             <p className="text-sm text-muted-foreground mb-4 max-w-md">
-              Drag and drop images here, or click to browse. You can also use your camera to capture photos directly.
+              {t('imageUpload.dragDrop')}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               <Button
@@ -172,7 +237,7 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
                   triggerCameraInput();
                 }}
               >
-                Take Photo
+                {t('imageUpload.takePhoto')}
               </Button>
               <Button
                 variant="outline"
@@ -181,7 +246,7 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
                 iconPosition="left"
                 iconSize={16}
               >
-                Choose Files
+                {t('imageUpload.chooseFiles')}
               </Button>
             </div>
           </div>
@@ -227,7 +292,7 @@ const ImageUploadZone = ({ images = [], onImagesChange, maxImages = 5 }) => {
               <div className="flex items-center justify-center gap-4">
                 <Icon name="Plus" size={24} className="text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Add more photos ({maxImages - displayImages?.length} remaining)
+                  {t('imageUpload.addMore', { remaining: maxImages - displayImages?.length })}
                 </p>
               </div>
             </div>

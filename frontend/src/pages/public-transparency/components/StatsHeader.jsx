@@ -1,36 +1,15 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const StatsHeader = ({ stats }) => {
+  const { t } = useTranslation();
+
   const statCards = [
-    {
-      label: 'Total Issues',
-      value: stats?.totalIssues,
-      icon: 'FileText',
-      color: 'text-primary',
-      bgColor: 'bg-primary/10'
-    },
-    {
-      label: 'Resolved',
-      value: stats?.resolvedIssues,
-      icon: 'CheckCircle',
-      color: 'text-success',
-      bgColor: 'bg-success/10'
-    },
-    {
-      label: 'In Progress',
-      value: stats?.inProgressIssues,
-      icon: 'RefreshCw',
-      color: 'text-warning',
-      bgColor: 'bg-warning/10'
-    },
-    {
-      label: 'Avg Response Time',
-      value: `${stats?.avgResponseTime} days`,
-      icon: 'Clock',
-      color: 'text-accent',
-      bgColor: 'bg-accent/10'
-    }
+    { label: t('statsHeader.totalIssues'), value: stats?.totalIssues, icon: 'FileText', color: 'text-primary', bgColor: 'bg-primary/10' },
+    { label: t('statsHeader.resolved'), value: stats?.resolvedIssues, icon: 'CheckCircle', color: 'text-success', bgColor: 'bg-success/10' },
+    { label: t('statsHeader.inProgress'), value: stats?.inProgressIssues, icon: 'RefreshCw', color: 'text-warning', bgColor: 'bg-warning/10' },
+    { label: t('statsHeader.avgResponse'), value: `${stats?.avgResponseTime}${t('statsHeader.days')}`, icon: 'Clock', color: 'text-accent', bgColor: 'bg-accent/10' }
   ];
 
   return (

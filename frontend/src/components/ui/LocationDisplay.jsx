@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 import Button from './Button';
 
@@ -9,6 +10,7 @@ const LocationDisplay = ({
   onLocationChange = null,
   className = ''
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatCoordinates = (coords) => {
@@ -40,7 +42,7 @@ const LocationDisplay = ({
       <div className={`flex items-start gap-2 ${className}`}>
         <Icon name="MapPin" size={16} className="text-muted-foreground mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground truncate">{address || 'No address provided'}</p>
+          <p className="text-sm text-foreground truncate">{address || t('location.noAddressProvided')}</p>
           {coordinates && (
             <p className="text-xs text-muted-foreground font-mono mt-0.5">
               {formatCoordinates(coordinates)}
@@ -56,7 +58,7 @@ const LocationDisplay = ({
             iconPosition="right"
             className="flex-shrink-0"
           >
-            {isExpanded ? 'Hide' : 'Show'} Map
+            {isExpanded ? t('location.hide') : t('location.show')} {t('location.map')}
           </Button>
         )}
       </div>
@@ -72,9 +74,9 @@ const LocationDisplay = ({
               <Icon name="MapPin" size={20} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-foreground mb-1">Location</h3>
+              <h3 className="text-base font-semibold text-foreground mb-1">{t('location.title')}</h3>
               <p className="text-sm text-muted-foreground break-words">
-                {address || 'No address provided'}
+                {address || t('location.noAddressProvided')}
               </p>
               {coordinates && (
                 <p className="text-xs text-muted-foreground font-mono mt-2">
@@ -93,7 +95,7 @@ const LocationDisplay = ({
               iconSize={16}
               className="flex-shrink-0"
             >
-              Use Current
+              {t('location.useCurrent')}
             </Button>
           )}
         </div>
@@ -102,7 +104,7 @@ const LocationDisplay = ({
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center">
               <Icon name="Map" size={48} className="text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Map preview</p>
+              <p className="text-sm text-muted-foreground">{t('location.mapPreview')}</p>
               {coordinates && (
                 <p className="text-xs text-muted-foreground mt-1 font-mono">
                   {formatCoordinates(coordinates)}

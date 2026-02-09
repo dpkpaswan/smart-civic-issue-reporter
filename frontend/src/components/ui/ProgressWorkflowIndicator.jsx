@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 
 const ProgressWorkflowIndicator = ({ 
@@ -7,10 +8,12 @@ const ProgressWorkflowIndicator = ({
   orientation = 'horizontal',
   className = ''
 }) => {
+  const { t } = useTranslation();
+
   const defaultSteps = [
-    { label: 'Report Details', icon: 'FileText' },
-    { label: 'Location & Photos', icon: 'MapPin' },
-    { label: 'Review & Submit', icon: 'CheckCircle' }
+    { label: t('workflow.reportDetails'), icon: 'FileText' },
+    { label: t('workflow.locationPhotos'), icon: 'MapPin' },
+    { label: t('workflow.reviewSubmit'), icon: 'CheckCircle' }
   ];
 
   const workflowSteps = steps?.length > 0 ? steps : defaultSteps;

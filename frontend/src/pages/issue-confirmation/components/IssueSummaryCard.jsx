@@ -1,15 +1,17 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
 import IssueStatusIndicator from '../../../components/ui/IssueStatusIndicator';
 
 const IssueSummaryCard = ({ issue }) => {
+  const { t } = useTranslation();
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden shadow-elevation-1">
       <div className="p-4 md:p-5 lg:p-6 border-b border-border">
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-foreground">
-            Issue Summary
+            {t('issueSummary.title')}
           </h2>
           <IssueStatusIndicator status="submitted" size="default" />
         </div>
@@ -31,7 +33,7 @@ const IssueSummaryCard = ({ issue }) => {
               <Icon name="Tag" size={18} className="text-primary md:w-5 md:h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground mb-1">Category</p>
+              <p className="text-xs md:text-sm text-muted-foreground mb-1">{t('issueSummary.category')}</p>
               <p className="text-sm md:text-base lg:text-lg font-medium text-foreground">
                 {issue?.category}
               </p>
@@ -43,7 +45,7 @@ const IssueSummaryCard = ({ issue }) => {
               <Icon name="MapPin" size={18} className="text-primary md:w-5 md:h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground mb-1">Location</p>
+              <p className="text-xs md:text-sm text-muted-foreground mb-1">{t('issueSummary.location')}</p>
               <p className="text-sm md:text-base text-foreground break-words">
                 {issue?.location}
               </p>
@@ -56,7 +58,7 @@ const IssueSummaryCard = ({ issue }) => {
                 <Icon name="FileText" size={18} className="text-primary md:w-5 md:h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs md:text-sm text-muted-foreground mb-1">Description</p>
+                <p className="text-xs md:text-sm text-muted-foreground mb-1">{t('issueSummary.description')}</p>
                 <p className="text-sm md:text-base text-foreground break-words">
                   {issue?.description}
                 </p>
@@ -69,7 +71,7 @@ const IssueSummaryCard = ({ issue }) => {
               <Icon name="Calendar" size={18} className="text-primary md:w-5 md:h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground mb-1">Submitted On</p>
+              <p className="text-xs md:text-sm text-muted-foreground mb-1">{t('issueSummary.submittedOn')}</p>
               <p className="text-sm md:text-base text-foreground">
                 {new Date(issue.submittedDate)?.toLocaleDateString('en-US', {
                   month: 'long',

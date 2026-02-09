@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '../../../components/ui/Button';
 
 const ActionButtons = ({ issueId }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleTrackIssue = () => {
@@ -15,11 +17,11 @@ const ActionButtons = ({ issueId }) => {
 
   const handleShareProgress = () => {
     const shareUrl = `${window.location?.origin}/public-transparency?issue=${issueId}`;
-    const shareText = `I just reported a civic issue (ID: ${issueId}) through Smart Civic Reporter. Track the progress here:`;
+    const shareText = t('actionButtons.shareText') + ` (ID: ${issueId})`;
     
     if (navigator.share) {
       navigator.share({
-        title: 'Smart Civic Reporter - Issue Tracking',
+        title: t('actionButtons.shareTitle'),
         text: shareText,
         url: shareUrl
       })?.catch(() => {
@@ -42,7 +44,7 @@ const ActionButtons = ({ issueId }) => {
           iconSize={20}
           fullWidth
         >
-          Track This Issue
+          {t('actionButtons.trackIssue')}
         </Button>
         <Button
           variant="outline"
@@ -53,7 +55,7 @@ const ActionButtons = ({ issueId }) => {
           iconSize={20}
           fullWidth
         >
-          Report Another Issue
+          {t('actionButtons.reportAnother')}
         </Button>
       </div>
       <Button
@@ -65,7 +67,7 @@ const ActionButtons = ({ issueId }) => {
         iconSize={20}
         fullWidth
       >
-        Share Progress
+        {t('actionButtons.shareProgress')}
       </Button>
     </div>
   );

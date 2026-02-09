@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useHighAccuracyLocation } from '../../../hooks/useHighAccuracyLocation';
@@ -15,6 +16,7 @@ import { useHighAccuracyLocation } from '../../../hooks/useHighAccuracyLocation'
  * - Production-ready with no mock data
  */
 const LocationPicker = ({ location, onLocationChange }) => {
+  const { t } = useTranslation();
   const [manualAddress, setManualAddress] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
   const [addressFromCoords, setAddressFromCoords] = useState('');
@@ -100,7 +102,6 @@ const LocationPicker = ({ location, onLocationChange }) => {
         if (data.display_name) {
           // Only update the local address state, NOT the main location to avoid re-renders
           setAddressFromCoords(data.display_name);
-          console.log('Geocoded address:', data.display_name);
         } else {
           throw new Error('No address in response');
         }
@@ -110,9 +111,9 @@ const LocationPicker = ({ location, onLocationChange }) => {
       
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.log('Geocoding aborted due to timeout');
-      } else {
-        console.log('Geocoding failed:', error.message);
+        // Geocoding aborted or failed — handled gracefully
+      } else if (error.name !== 'AbortError') {
+        // Geocoding failed — fall through to address display fallback
       }
       
       // Set fallback address in local state only
@@ -158,12 +159,12 @@ const LocationPicker = ({ location, onLocationChange }) => {
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base lg:text-lg font-semibold text-foreground">Location</h3>
+          <h3 className="text-base lg:text-lg font-semibold text-foreground">{t('location.title')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            {isDetecting ? 'Detecting your precise location...' : 
-             location ? 'Location detected' : 
-             error ? 'Location detection failed' :
-             'Ready to detect location'}
+            {isDetecting ? t('location.detectingPrecise') : 
+             location ? t('location.detected') : 
+             error ? t('location.detectionFailed') :
+             t('location.readyToDetect')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -178,7 +179,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
             iconSize={16}
           >
             <span className="hidden sm:inline">
-              {retryCount > 0 ? 'Retry' : 'Detect'}
+              {retryCount > 0 ? t('location.tryAgain') : t('location.autoDetect')}
             </span>
           </Button>
           <Button
@@ -189,7 +190,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
             iconPosition="left"
             iconSize={16}
           >
-            <span className="hidden sm:inline">Manual</span>
+            <span className="hidden sm:inline">{t('location.enterManually')}</span>
           </Button>
         </div>
       </div>
@@ -202,9 +203,9 @@ const LocationPicker = ({ location, onLocationChange }) => {
               <Icon name="Navigation" size={16} className="text-primary" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Detecting High-Accuracy Location</p>
+              <p className="text-sm font-medium text-foreground">{t('location.detectingGPS')}</p>
               <p className="text-xs text-muted-foreground">
-                Using GPS, Wi-Fi, and network triangulation...
+                {t('location.usingGPS')}
               </p>
             </div>
           </div>
@@ -229,7 +230,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
                   iconPosition="left"
                   iconSize={14}
                 >
-                  Retry Detection ({retryCount + 1}/{maxRetries})
+                  {`Retry (${retryCount + 1}/${maxRetries})`}
                 </Button>
               )}
             </div>
@@ -243,9 +244,9 @@ const LocationPicker = ({ location, onLocationChange }) => {
           <div className="flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-yellow-600 mt-0.5" />
             <div className="flex-1">
-              <h4 className="text-sm font-medium text-yellow-800">Low Location Accuracy</h4>
+              <h4 className="text-sm font-medium text-yellow-800">{t('location.lowAccuracy')}</h4>
               <p className="text-xs text-yellow-600 mt-1">
-                Current accuracy: {accuracyDisplay}. For better accuracy, try moving outdoors or to an area with better GPS reception.
+                {t('location.considerRetry')}
               </p>
               <Button
                 variant="outline"
@@ -256,7 +257,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
                 iconPosition="left"
                 iconSize={14}
               >
-                Try for Better Accuracy
+                {t('location.tryAgain')}
               </Button>
             </div>
           </div>
@@ -269,17 +270,17 @@ const LocationPicker = ({ location, onLocationChange }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Enter Address Manually
+                {t('location.enterManually')}
               </label>
               <textarea
                 value={manualAddress}
                 onChange={(e) => setManualAddress(e?.target?.value)}
-                placeholder="Enter the complete address where the civic issue is located..."
+                placeholder={t('location.enterAddress')}
                 className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Include street address, city, state/province, and postal code for best results.
+                {t('location.includeDetails')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -292,7 +293,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
                 iconPosition="left"
                 iconSize={16}
               >
-                Save Address
+                {t('location.setLocation')}
               </Button>
               <Button
                 variant="ghost"
@@ -302,7 +303,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
                   setManualAddress('');
                 }}
               >
-                Cancel
+                {t('location.cancel')}
               </Button>
             </div>
           </div>
@@ -326,7 +327,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground break-words">
-                  {addressFromCoords || location?.address || (isGeocodingAddress ? 'Getting address...' : 'Address not available')}
+                  {addressFromCoords || location?.address || (isGeocodingAddress ? t('location.gettingAddress') : t('location.noAddressProvided'))}
                 </p>
                 
                 {/* GPS Coordinates */}
@@ -349,7 +350,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
                 {location?.source === 'manual' && (
                   <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs border border-blue-200">
                     <Icon name="Edit" size={12} />
-                    Manually entered
+                    {t('location.manuallyEntered')}
                   </span>
                 )}
               </div>
@@ -381,7 +382,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
               <Icon name="MapPin" size={32} className="text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              No location detected yet
+              {t('location.noLocationDetected')}
             </p>
             <Button
               variant="outline"
@@ -391,7 +392,7 @@ const LocationPicker = ({ location, onLocationChange }) => {
               iconPosition="left"
               iconSize={16}
             >
-              Detect My Location
+              {t('location.autoDetect')}
             </Button>
           </div>
         </div>

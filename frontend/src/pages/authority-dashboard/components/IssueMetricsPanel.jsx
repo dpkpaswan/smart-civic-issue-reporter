@@ -1,12 +1,24 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const IssueMetricsPanel = ({ metrics }) => {
+  const { t } = useTranslation();
+
   const metricCards = [
     {
+      id: 'total',
+      label: t('metrics.totalIssues'),
+      value: metrics?.total || 0,
+      icon: 'LayoutList',
+      bgColor: 'bg-blue-500/10',
+      iconColor: 'text-blue-500',
+      borderColor: 'border-blue-500/20'
+    },
+    {
       id: 'submitted',
-      label: 'Submitted Issues',
-      value: metrics?.pending,
+      label: t('metrics.pendingAssigned'),
+      value: metrics?.pending || 0,
       icon: 'Clock',
       bgColor: 'bg-warning/10',
       iconColor: 'text-warning',
@@ -14,8 +26,8 @@ const IssueMetricsPanel = ({ metrics }) => {
     },
     {
       id: 'inProgress',
-      label: 'In Progress',
-      value: metrics?.inProgress,
+      label: t('metrics.inProgress'),
+      value: metrics?.inProgress || 0,
       icon: 'RefreshCw',
       bgColor: 'bg-primary/10',
       iconColor: 'text-primary',
@@ -23,8 +35,8 @@ const IssueMetricsPanel = ({ metrics }) => {
     },
     {
       id: 'resolved',
-      label: 'Resolved Today',
-      value: metrics?.resolvedToday,
+      label: t('metrics.resolvedToday'),
+      value: metrics?.resolvedToday || 0,
       icon: 'CheckCircle',
       bgColor: 'bg-success/10',
       iconColor: 'text-success',
@@ -32,17 +44,26 @@ const IssueMetricsPanel = ({ metrics }) => {
     },
     {
       id: 'avgTime',
-      label: 'Avg Resolution Time',
-      value: metrics?.avgResolutionTime,
+      label: t('metrics.avgResolution'),
+      value: metrics?.avgResolutionTime || 'N/A',
       icon: 'Timer',
       bgColor: 'bg-secondary/10',
       iconColor: 'text-secondary',
       borderColor: 'border-secondary/20'
+    },
+    {
+      id: 'slaBreach',
+      label: t('metrics.slaBreached'),
+      value: metrics?.slaBreached || 0,
+      icon: 'AlertOctagon',
+      bgColor: metrics?.slaBreached > 0 ? 'bg-red-500/10' : 'bg-green-500/10',
+      iconColor: metrics?.slaBreached > 0 ? 'text-red-500' : 'text-green-500',
+      borderColor: metrics?.slaBreached > 0 ? 'border-red-500/20' : 'border-green-500/20'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
       {metricCards?.map((metric) => (
         <div
           key={metric?.id}

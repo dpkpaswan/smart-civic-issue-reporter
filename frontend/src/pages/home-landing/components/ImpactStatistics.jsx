@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 
 const ImpactStatistics = ({ statistics }) => {
+  const { t } = useTranslation();
   // Use real data if available, otherwise fall back to defaults
   const getStatistics = () => {
     if (!statistics) {
@@ -9,9 +11,9 @@ const ImpactStatistics = ({ statistics }) => {
         {
           id: 1,
           icon: 'FileText',
-          label: 'Total Issues Reported',
-          value: 'Loading...',
-          change: 'Fetching data',
+          label: t('impact.totalIssues'),
+          value: t('impact.loading'),
+          change: t('impact.fetchingData'),
           changeType: 'neutral',
           color: 'primary',
           progress: 0
@@ -19,9 +21,9 @@ const ImpactStatistics = ({ statistics }) => {
         {
           id: 2,
           icon: 'CheckCircle',
-          label: 'Issues Resolved',
-          value: 'Loading...',
-          change: 'Calculating rate',
+          label: t('impact.issuesResolved'),
+          value: t('impact.loading'),
+          change: t('impact.calculatingRate'),
           changeType: 'neutral', 
           color: 'success',
           progress: 0
@@ -29,9 +31,9 @@ const ImpactStatistics = ({ statistics }) => {
         {
           id: 3,
           icon: 'Clock',
-          label: 'Average Resolution Time',
-          value: 'Loading...',
-          change: 'Analyzing data',
+          label: t('impact.avgResolution'),
+          value: t('impact.loading'),
+          change: t('impact.analyzingData'),
           changeType: 'neutral',
           color: 'accent',
           progress: 0
@@ -39,9 +41,9 @@ const ImpactStatistics = ({ statistics }) => {
         {
           id: 4,
           icon: 'Users',
-          label: 'Active Citizens',
-          value: 'Loading...',
-          change: 'Counting users',
+          label: t('impact.activeCitizens'),
+          value: t('impact.loading'),
+          change: t('impact.countingUsers'),
           changeType: 'neutral',
           color: 'secondary',
           progress: 0
@@ -53,9 +55,9 @@ const ImpactStatistics = ({ statistics }) => {
       {
         id: 1,
         icon: 'FileText',
-        label: 'Total Issues Reported',
+        label: t('impact.totalIssues'),
         value: statistics.totalIssues?.toLocaleString() || '0',
-        change: statistics.totalIssues > 50 ? 'Community engaged' : 'Growing platform',
+        change: statistics.totalIssues > 50 ? t('impact.communityEngaged') : t('impact.growingPlatform'),
         changeType: 'positive',
         color: 'primary',
         progress: Math.min(85, (statistics.totalIssues || 0) * 2)
@@ -63,9 +65,9 @@ const ImpactStatistics = ({ statistics }) => {
       {
         id: 2,
         icon: 'CheckCircle',
-        label: 'Issues Resolved',
+        label: t('impact.issuesResolved'),
         value: statistics.resolvedIssues?.toLocaleString() || '0',
-        change: `${statistics.resolutionRate || 0}% resolution rate`,
+        change: `${statistics.resolutionRate || 0}% ${t('impact.resolutionRate')}`,
         changeType: 'positive',
         color: 'success',
         progress: statistics.resolutionRate || 0
@@ -73,9 +75,9 @@ const ImpactStatistics = ({ statistics }) => {
       {
         id: 3,
         icon: 'Clock',
-        label: 'Average Resolution Time',
+        label: t('impact.avgResolution'),
         value: statistics.avgResolutionTime || '0 days',
-        change: statistics.avgResolutionTime !== '0 days' ? 'Efficient response' : 'Building history',
+        change: statistics.avgResolutionTime !== '0 days' ? t('impact.efficientResponse') : t('impact.buildingHistory'),
         changeType: 'positive',
         color: 'accent',
         progress: statistics.avgResolutionTime === '0 days' ? 0 : Math.max(20, 100 - (parseInt(statistics.avgResolutionTime) || 0) * 10)
@@ -83,9 +85,9 @@ const ImpactStatistics = ({ statistics }) => {
       {
         id: 4,
         icon: 'Users',
-        label: 'Active Citizens',
+        label: t('impact.activeCitizens'),
         value: statistics.activeCitizens?.toLocaleString() || '0',
-        change: statistics.activeCitizens > 10 ? 'Growing community' : 'Join the movement',
+        change: statistics.activeCitizens > 10 ? t('impact.growingCommunity') : t('impact.joinMovement'),
         changeType: 'positive',
         color: 'secondary',
         progress: Math.min(92, (statistics.activeCitizens || 0) * 5)
@@ -126,10 +128,10 @@ const ImpactStatistics = ({ statistics }) => {
       <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
         <div className="text-center mb-8 md:mb-12 animate-fade-in-up">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 md:mb-4">
-            Community Impact
+            {t('impact.title')}
           </h2>
           <p className="text-sm md:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Real-time statistics showing how our community is making a difference through civic engagement
+            {t('impact.subtitle')}
           </p>
         </div>
 
@@ -162,7 +164,7 @@ const ImpactStatistics = ({ statistics }) => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Progress</span>
+                    <span>{t('impact.progress')}</span>
                     <span className="font-medium animate-count-up">{stat?.progress}%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
