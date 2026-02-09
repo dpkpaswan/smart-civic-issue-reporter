@@ -8,7 +8,7 @@
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;

@@ -3,7 +3,7 @@
  * Handles user authentication, JWT tokens, and user management
  */
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { supabase } = require('../config/database');
 const AuditService = require('./AuditService');

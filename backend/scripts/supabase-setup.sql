@@ -206,17 +206,17 @@ INSERT INTO departments (name, code, description, contact_email, sla_hours) VALU
 ON CONFLICT (code) DO NOTHING;
 
 -- 10. Seed users (default password for ALL users: Admin@123)
--- Hash generated via: bcrypt.hash('Admin@123', 12)
+-- Hash generated via: bcrypt.hash('Admin@123', 12) — verified with bcrypt v6
 INSERT INTO users (username, password, role, email, full_name, department_id, ward_area) VALUES
-('admin', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'admin', 'admin@city.gov', 'System Administrator', 1, 'Central'),
-('roads_supervisor', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'roads@city.gov', 'Roads Department Supervisor', 1, 'North'),
-('sanitation_head', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'sanitation@city.gov', 'Sanitation Department Head', 2, 'South'),
-('water_engineer', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'water@city.gov', 'Water Department Engineer', 3, 'East'),
-('electricity_tech', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'electricity@city.gov', 'Electrical Technician', 4, 'West'),
-('traffic_officer', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'traffic@city.gov', 'Traffic Management Officer', 5, 'Central'),
-('parks_manager', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'parks@city.gov', 'Parks and Recreation Manager', 6, 'North'),
-('planning_officer', '$2b$12$DnWwWwVPbLPZJC6JNQFsrul.55.s.4Ovp/tkUD.nO91o09QcuWdBS', 'authority', 'planning@city.gov', 'Building and Planning Officer', 7, 'South')
-ON CONFLICT (username) DO NOTHING;
+('admin', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'admin', 'admin@city.gov', 'System Administrator', 1, 'Central'),
+('roads_supervisor', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'roads@city.gov', 'Roads Department Supervisor', 1, 'North'),
+('sanitation_head', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'sanitation@city.gov', 'Sanitation Department Head', 2, 'South'),
+('water_engineer', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'water@city.gov', 'Water Department Engineer', 3, 'East'),
+('electricity_tech', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'electricity@city.gov', 'Electrical Technician', 4, 'West'),
+('traffic_officer', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'traffic@city.gov', 'Traffic Management Officer', 5, 'Central'),
+('parks_manager', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'parks@city.gov', 'Parks and Recreation Manager', 6, 'North'),
+('planning_officer', '$2b$12$cg3WIBctmUt9MPUVI5SySOE6ys8RKFgqslDF3vgrU5c5paTgFY9Tm', 'authority', 'planning@city.gov', 'Building and Planning Officer', 7, 'South')
+ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password;
 
 -- 11. Seed sample issues
 INSERT INTO issues (

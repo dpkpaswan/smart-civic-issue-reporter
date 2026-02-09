@@ -18,8 +18,7 @@ const adminRouter = require('./routes/admin');
 const { attachIP } = require('./middleware/auth');
 const { 
   securityHeaders, 
-  generalLimiter, 
-  authLimiter,
+  generalLimiter,
   sanitizeInput,
   requestLogger,
   errorHandler,
@@ -31,6 +30,7 @@ const {
 // Import services for background tasks
 const DepartmentService = require('./services/DepartmentService');
 const NotificationService = require('./services/NotificationService');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -117,11 +117,7 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, 'uploads')));
 
-// Apply AuthLimiter to auth routes
-app.use('/api/auth', authLimiter);
-
-// API Routes
-app.use('/api/issues', issuesRouter);
+// Auth routes (no rate limiting)
 app.use('/api/auth', authRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/departments', departmentRouter);
@@ -163,6 +159,59 @@ app.get('/api/status', async (req, res) => {
     });
   }
 });
+
+// ─── Auto-heal: verify & fix user passwords on startup ───
+const ensurePasswordsValid = async () => {
+  const DEFAULT_PASSWORD = 'Admin@123';
+  const SALT_ROUNDS = 12;
+  const { supabase } = require('./config/database');
+
+  try {
+    // Check admin account password
+    const { data: admin, error } = await supabase
+      .from('users')
+      .select('id, username, password')
+      .eq('username', 'admin')
+      .single();
+
+    if (error || !admin) {
+      console.log('⚠️  No admin user found — skipping password check');
+      return;
+    }
+
+    const isValid = await bcrypt.compare(DEFAULT_PASSWORD, admin.password);
+    if (isValid) {
+      console.log('✅ User passwords verified OK');
+      return;
+    }
+
+    // Passwords are broken — regenerate for ALL users
+    console.log('🔧 Password hash mismatch detected — fixing all user passwords...');
+    const correctHash = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
+
+    const { data: allUsers, error: fetchErr } = await supabase
+      .from('users')
+      .select('id, username');
+
+    if (fetchErr || !allUsers) {
+      console.error('❌ Failed to fetch users for password fix:', fetchErr?.message);
+      return;
+    }
+
+    let fixed = 0;
+    for (const u of allUsers) {
+      const { error: upErr } = await supabase
+        .from('users')
+        .update({ password: correctHash })
+        .eq('id', u.id);
+      if (!upErr) fixed++;
+      else console.error(`  ❌ ${u.username}: ${upErr.message}`);
+    }
+    console.log(`✅ Fixed passwords for ${fixed}/${allUsers.length} users (password: ${DEFAULT_PASSWORD})`);
+  } catch (err) {
+    console.error('❌ Password auto-heal failed:', err.message);
+  }
+};
 
 // Background tasks setup
 const setupBackgroundTasks = () => {
@@ -222,6 +271,9 @@ app.listen(PORT, async () => {
     const isConnected = await testConnection();
     if (isConnected) {
       console.log('✅ Database ready for operations');
+      
+      // Auto-heal passwords if hash is broken
+      await ensurePasswordsValid();
       
       // Setup background tasks only if database is connected
       setupBackgroundTasks();

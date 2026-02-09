@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 async function generateUserSQL() {
   console.log('Generating SQL statements for user creation...\n');

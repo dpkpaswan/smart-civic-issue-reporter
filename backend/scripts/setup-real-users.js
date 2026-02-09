@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
 
 // Supabase configuration - MUST use service role key for user creation
