@@ -119,6 +119,7 @@ app.use('/uploads', (req, res, next) => {
 
 // Auth routes (no rate limiting)
 app.use('/api/auth', authRouter);
+app.use('/api/issues', issuesRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/departments', departmentRouter);
 app.use('/api/admin', adminRouter);
