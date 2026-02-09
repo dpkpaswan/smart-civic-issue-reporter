@@ -10,8 +10,13 @@
  */
 
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 const { supabase } = require('../config/database');
 const { submissionEmailTemplate, resolutionEmailTemplate } = require('./EmailTemplates');
+
+// Force IPv4 DNS resolution — fixes SMTP timeouts on Render/cloud platforms
+// where IPv6 routes to external hosts silently fail
+dns.setDefaultResultOrder('ipv4first');
 
 class NotificationService {
   constructor() {
@@ -38,31 +43,59 @@ class NotificationService {
       return;
     }
 
-    try {
-      this.emailTransporter = nodemailer.createTransport({
+    // Try port 465 (direct SSL) first, then fall back to port 587 (STARTTLS)
+    const smtpConfigs = [
+      {
+        name: 'SSL (port 465)',
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.EMAIL_PORT, 10) || 587,
-        secure: process.env.EMAIL_SECURE === 'true',        // false for port 587 (STARTTLS)
-        auth: { user: emailUser, pass: emailPass },
-        connectionTimeout: 10000,   // 10 s to connect
-        greetingTimeout: 10000,     // 10 s for SMTP greeting
-        socketTimeout: 15000,       // 15 s for any socket silence
-        tls: {
-          rejectUnauthorized: false, // accept Render's network edge certs
-          minVersion: 'TLSv1.2'
-        }
-      });
+        port: 465,
+        secure: true,
+      },
+      {
+        name: 'STARTTLS (port 587)',
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+      }
+    ];
 
-      await this.emailTransporter.verify();
-      this.emailEnabled = true;
-      console.log(`📧 Email notifications ENABLED — sending from ${emailUser}`);
-    } catch (err) {
-      console.error('📧 Email setup FAILED:', err.message);
-      console.log('   For Gmail: enable 2FA → create App Password at https://myaccount.google.com/apppasswords');
-      console.log('   Set EMAIL_PASS to the 16-char app password (not your Gmail password)');
-      this.emailTransporter = null;
-      this.emailEnabled = false;
+    for (const config of smtpConfigs) {
+      try {
+        console.log(`📧 Trying ${config.name} → ${config.host}:${config.port} ...`);
+
+        this.emailTransporter = nodemailer.createTransport({
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          auth: { user: emailUser, pass: emailPass },
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000,
+          pool: true,
+          maxConnections: 3,
+          tls: {
+            rejectUnauthorized: false,
+            minVersion: 'TLSv1.2'
+          }
+        });
+
+        await this.emailTransporter.verify();
+        this.emailEnabled = true;
+        console.log(`📧 Email notifications ENABLED via ${config.name} — sending from ${emailUser}`);
+        return; // success — stop trying other configs
+      } catch (err) {
+        console.warn(`📧 ${config.name} failed: ${err.message}`);
+        this.emailTransporter = null;
+      }
     }
+
+    // All configs failed
+    console.error('📧 Email setup FAILED — all SMTP connection methods timed out');
+    console.log('   For Gmail: enable 2FA → create App Password at https://myaccount.google.com/apppasswords');
+    console.log('   Set EMAIL_PASS to the 16-char app password (not your Gmail password)');
+    console.log('   If on Render free tier: outbound SMTP may be blocked — upgrade to paid ($7/mo) or use an HTTP email API');
+    this.emailTransporter = null;
+    this.emailEnabled = false;
   }
 
   // ═══════════════════════════════════════════════════════════════
