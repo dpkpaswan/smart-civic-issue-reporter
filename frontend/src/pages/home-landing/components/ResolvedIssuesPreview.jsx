@@ -84,7 +84,7 @@ const ResolvedIssuesPreview = () => {
 
       // Fallback: use general issues API if success stories endpoint returned nothing
       if (stories.length === 0) {
-        const response = await issuesApi.getAll();
+        const response = await issuesApi.getPublic();
         if (response.success) {
           stories = response.data
             .filter(issue => issue.status === 'resolved')

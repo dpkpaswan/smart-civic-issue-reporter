@@ -20,7 +20,7 @@ const HomeLanding = () => {
 
   const loadStatistics = async () => {
     try {
-      const response = await issuesApi.getAll();
+      const response = await issuesApi.getPublic();
       
       if (response.success) {
         const issues = response.data;

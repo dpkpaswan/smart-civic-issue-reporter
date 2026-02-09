@@ -168,10 +168,10 @@ export const issuesApi = {
     }
   },
 
-  // Get success stories (resolved issues with before/after images)
+  // Get success stories (resolved issues with before/after images) — public, no auth
   getSuccessStories: async (limit = 10) => {
     try {
-      const response = await apiClient.get(`/issues/success-stories?limit=${limit}`);
+      const response = await publicApiClient.get(`/issues/success-stories?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching success stories:', error);
