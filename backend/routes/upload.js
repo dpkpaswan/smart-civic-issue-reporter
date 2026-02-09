@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { authenticateToken, requireAnyRole } = require('../middleware/auth');
 const router = express.Router();
 
 // Ensure uploads directory exists
@@ -44,7 +45,95 @@ const upload = multer({
   }
 });
 
-// POST /api/upload/image - Single image upload
+// POST /api/upload/classify - Upload image and get AI classification
+const AIClassificationService = require('../services/AIClassificationService');
+
+router.post('/classify', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No image file uploaded'
+      });
+    }
+
+    // Get AI classification for the uploaded image
+    const imagePath = req.file.path;
+    const originalCategory = req.body.category || null; // Optional user hint
+    
+    try {
+      const aiClassification = await AIClassificationService.classifyIssueFromImage(
+        imagePath,
+        originalCategory
+      );
+      
+      res.json({
+        success: true,
+        data: {
+          image: {
+            filename: req.file.filename,
+            originalName: req.file.originalname,
+            size: req.file.size,
+            url: `/uploads/${req.file.filename}`,
+            fullUrl: `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+          },
+          aiClassification: {
+            category: aiClassification.verified_category,
+            confidence: aiClassification.confidence_score,
+            explanation: aiClassification.ai_explanation,
+            needsReview: aiClassification.needs_review,
+            wasReclassified: aiClassification.was_reclassified,
+            reclassificationEvent: aiClassification.reclassification_event
+          }
+        }
+      });
+      
+    } catch (aiError) {
+      console.error('❌ AI classification failed:', aiError.message);
+      
+      // Provide more specific error messages
+      let userFriendlyError = 'AI classification failed';
+      if (aiError.message.includes('GEMINI_API_KEY')) {
+        userFriendlyError = 'AI service not configured - missing API key';
+      } else if (aiError.message.includes('API')) {
+        userFriendlyError = 'AI service temporarily unavailable';
+      } else if (aiError.message.includes('quota')) {
+        userFriendlyError = 'AI service quota exceeded';
+      }
+      
+      // Return image upload success with fallback classification
+      res.json({
+        success: true,
+        data: {
+          image: {
+            filename: req.file.filename,
+            originalName: req.file.originalname,
+            size: req.file.size,
+            url: `/uploads/${req.file.filename}`,
+            fullUrl: `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+          },
+          aiClassification: {
+            category: originalCategory || 'other',
+            confidence: 0.1,
+            explanation: userFriendlyError + ' - manual selection required',
+            needsReview: true,
+            wasReclassified: false,
+            error: userFriendlyError
+          }
+        }
+      });
+    }
+    
+  } catch (error) {
+    console.error('Upload and classify error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload and classify image'
+    });
+  }
+});
+
+// POST /api/upload/image - Single image upload (legacy)
 router.post('/image', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
@@ -56,6 +145,7 @@ router.post('/image', upload.single('image'), (req, res) => {
     }
     
     const imageUrl = `/uploads/${req.file.filename}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
     
     res.json({
       success: true,
@@ -66,7 +156,7 @@ router.post('/image', upload.single('image'), (req, res) => {
         size: req.file.size,
         mimetype: req.file.mimetype,
         url: imageUrl,
-        fullUrl: `http://localhost:5000${imageUrl}`
+        fullUrl: `${baseUrl}${imageUrl}`
       }
     });
   } catch (error) {
@@ -89,13 +179,14 @@ router.post('/images', upload.array('images', 5), (req, res) => {
       });
     }
     
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
     const uploadedImages = req.files.map(file => ({
       originalName: file.originalname,
       filename: file.filename,
       size: file.size,
       mimetype: file.mimetype,
       url: `/uploads/${file.filename}`,
-      fullUrl: `http://localhost:5000/uploads/${file.filename}`
+      fullUrl: `${baseUrl}/uploads/${file.filename}`
     }));
     
     res.json({
@@ -113,10 +204,19 @@ router.post('/images', upload.array('images', 5), (req, res) => {
 });
 
 // DELETE /api/upload/:filename - Delete uploaded file
-router.delete('/:filename', (req, res) => {
+router.delete('/:filename', authenticateToken, requireAnyRole(['admin', 'super_admin']), (req, res) => {
   try {
-    const filename = req.params.filename;
+    // Sanitize filename to prevent path traversal
+    const filename = path.basename(req.params.filename);
     const filepath = path.join(uploadsDir, filename);
+    
+    // Double check the resolved path is within uploads directory
+    if (!filepath.startsWith(uploadsDir)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid filename'
+      });
+    }
     
     // Check if file exists
     if (!fs.existsSync(filepath)) {
@@ -145,7 +245,7 @@ router.delete('/:filename', (req, res) => {
 });
 
 // GET /api/upload/list - List all uploaded files
-router.get('/list', (req, res) => {
+router.get('/list', authenticateToken, requireAnyRole(['admin', 'super_admin']), (req, res) => {
   try {
     const files = fs.readdirSync(uploadsDir);
     
@@ -158,7 +258,7 @@ router.get('/list', (req, res) => {
         size: stats.size,
         uploadedAt: stats.birthtime,
         url: `/uploads/${filename}`,
-        fullUrl: `http://localhost:5000/uploads/${filename}`
+        fullUrl: `/uploads/${filename}`
       };
     });
     
